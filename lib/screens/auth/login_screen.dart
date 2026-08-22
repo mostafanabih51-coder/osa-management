@@ -28,7 +28,7 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final ok = await context.read<AuthProvider>().login(
-          _email.text,
+          _email.text.trim(),
           _password.text,
         );
 
@@ -74,7 +74,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         size: 46,
                       ),
                     ),
+
                     const SizedBox(height: 28),
+
                     const Text(
                       'تسجيل الدخول',
                       style: TextStyle(
@@ -82,36 +84,55 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.w800,
                       ),
                     ),
+
                     const SizedBox(height: 8),
+
                     Text(
                       'مرحبًا بك في نظام إدارة Online School Academy',
                       style: TextStyle(
-                        color: AppTheme.muted,
+                        color: AppTheme.dark.withValues(alpha: 0.65),
                         fontSize: 15,
                       ),
                     ),
+
                     const SizedBox(height: 32),
+
                     TextFormField(
                       controller: _email,
                       keyboardType: TextInputType.emailAddress,
+                      textInputAction: TextInputAction.next,
                       decoration: const InputDecoration(
                         labelText: 'البريد الإلكتروني',
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (v) => v == null || v.trim().isEmpty
-                          ? 'أدخل البريد الإلكتروني'
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'أدخل البريد الإلكتروني';
+                        }
+
+                        return null;
+                      },
                     ),
+
                     const SizedBox(height: 14),
+
                     TextFormField(
                       controller: _password,
                       obscureText: _obscure,
+                      textInputAction: TextInputAction.done,
+                      onFieldSubmitted: (_) {
+                        if (!loading) {
+                          _submit();
+                        }
+                      },
                       decoration: InputDecoration(
                         labelText: 'كلمة المرور',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           onPressed: () {
-                            setState(() => _obscure = !_obscure);
+                            setState(() {
+                              _obscure = !_obscure;
+                            });
                           },
                           icon: Icon(
                             _obscure
@@ -120,11 +141,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ),
-                      validator: (v) => v == null || v.isEmpty
-                          ? 'أدخل كلمة المرور'
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'أدخل كلمة المرور';
+                        }
+
+                        return null;
+                      },
                     ),
+
                     const SizedBox(height: 24),
+
                     ElevatedButton(
                       onPressed: loading ? null : _submit,
                       child: loading
