@@ -124,9 +124,7 @@ class _HomeTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () {
-        return context
-            .read<DashboardProvider>()
-            .load();
+        return context.read<DashboardProvider>().load();
       },
       child: Consumer<DashboardProvider>(
         builder: (context, state, _) {
@@ -142,18 +140,14 @@ class _HomeTab extends StatelessWidget {
             ),
             children: [
               _Welcome(
-                userName:
-                    auth.user?.name ?? 'مدير النظام',
+                userName: auth.user?.name ?? 'مدير النظام',
               ),
-
               const SizedBox(height: 18),
-
               if (state.error != null)
                 _ErrorBanner(
                   message: state.error!,
                   onRetry: state.load,
                 ),
-
               if (state.loading &&
                   data.students == 0 &&
                   data.teachers == 0 &&
@@ -168,7 +162,6 @@ class _HomeTab extends StatelessWidget {
                     child: CircularProgressIndicator(),
                   ),
                 ),
-
               _SectionTitle(
                 title: 'ملخص اليوم',
                 action: state.loading
@@ -178,29 +171,22 @@ class _HomeTab extends StatelessWidget {
                         size: 20,
                       ),
               ),
-
               const SizedBox(height: 10),
-
               _StatsGrid(
                 data: data,
               ),
-
               const SizedBox(height: 22),
-
               _FinancialSummary(
                 data: data,
               ),
-
               const SizedBox(height: 22),
-
               _ExpiringSubscriptions(
                 count: data.expiring7Days,
                 onTap: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (_) =>
-                          const SubscriptionsScreen(),
+                      builder: (_) => const SubscriptionsScreen(),
                     ),
                   );
                 },
@@ -255,8 +241,7 @@ class _Welcome extends StatelessWidget {
           const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
                   'مرحبًا بك',
@@ -269,8 +254,7 @@ class _Welcome extends StatelessWidget {
                 Text(
                   userName,
                   maxLines: 1,
-                  overflow:
-                      TextOverflow.ellipsis,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
@@ -332,8 +316,7 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.count(
       shrinkWrap: true,
-      physics:
-          const NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
@@ -342,8 +325,7 @@ class _StatsGrid extends StatelessWidget {
         _StatCard(
           title: 'الطلاب',
           value: data.students.toString(),
-          subtitle:
-              '${data.activeStudents} نشط',
+          subtitle: '${data.activeStudents} نشط',
           icon: Icons.groups_rounded,
         ),
         _StatCard(
@@ -360,8 +342,7 @@ class _StatsGrid extends StatelessWidget {
         ),
         _StatCard(
           title: 'حضور اليوم',
-          value:
-              data.todayAttendance.toString(),
+          value: data.todayAttendance.toString(),
           subtitle: 'سجل حضور',
           icon: Icons.fact_check_rounded,
         ),
@@ -389,8 +370,7 @@ class _StatCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -401,8 +381,7 @@ class _StatCard extends StatelessWidget {
                     color: AppTheme.primary.withValues(
                       alpha: 0.09,
                     ),
-                    borderRadius:
-                        BorderRadius.circular(11),
+                    borderRadius: BorderRadius.circular(11),
                   ),
                   child: Icon(
                     icon,
@@ -459,8 +438,7 @@ class _FinancialSummary extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(18),
         child: Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
               'ملخص الشهر المالي',
@@ -475,19 +453,15 @@ class _FinancialSummary extends StatelessWidget {
                 Expanded(
                   child: _MoneyItem(
                     title: 'الإيرادات',
-                    value:
-                        data.monthlyIncome,
-                    icon:
-                        Icons.trending_up_rounded,
+                    value: data.monthlyIncome,
+                    icon: Icons.trending_up_rounded,
                   ),
                 ),
                 Expanded(
                   child: _MoneyItem(
                     title: 'المصروفات',
-                    value:
-                        data.monthlyExpenses,
-                    icon:
-                        Icons.trending_down_rounded,
+                    value: data.monthlyExpenses,
+                    icon: Icons.trending_down_rounded,
                   ),
                 ),
               ],
@@ -514,7 +488,7 @@ class _FinancialSummary extends StatelessWidget {
                     fontWeight: FontWeight.w900,
                     color: isPositive
                         ? Colors.green.shade700
-                        : AppColors.red,
+                        : AppTheme.primary,
                   ),
                 ),
               ],
@@ -549,8 +523,7 @@ class _MoneyItem extends StatelessWidget {
         const SizedBox(width: 8),
         Expanded(
           child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
@@ -606,8 +579,7 @@ class _ExpiringSubscriptions extends StatelessWidget {
                       : Colors.green.withValues(
                           alpha: 0.10,
                         ),
-                  borderRadius:
-                      BorderRadius.circular(14),
+                  borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
                   hasWarnings
@@ -621,8 +593,7 @@ class _ExpiringSubscriptions extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
                       'الاشتراكات القريبة من الانتهاء',
@@ -865,8 +836,7 @@ class _QuickCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Column(
-          mainAxisAlignment:
-              MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
               icon,
