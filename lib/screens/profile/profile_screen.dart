@@ -12,17 +12,20 @@ class ProfileScreen extends StatelessWidget {
     final auth = context.watch<AuthProvider>();
     final user = auth.user;
 
-    final name = user?.name?.trim().isNotEmpty == true
-        ? user!.name!
-        : 'مستخدم OSA';
+    final name = _displayValue(
+      user?.name,
+      'مستخدم OSA',
+    );
 
-    final email = user?.email?.trim().isNotEmpty == true
-        ? user!.email!
-        : '—';
+    final email = _displayValue(
+      user?.email,
+      '—',
+    );
 
-    final role = user?.role?.trim().isNotEmpty == true
-        ? user!.role!
-        : '—';
+    final role = _displayValue(
+      user?.role,
+      '—',
+    );
 
     return Scaffold(
       appBar: AppBar(
@@ -30,7 +33,12 @@ class ProfileScreen extends StatelessWidget {
         centerTitle: false,
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+        padding: const EdgeInsets.fromLTRB(
+          16,
+          16,
+          16,
+          30,
+        ),
         children: [
           _ProfileHeader(
             name: name,
@@ -71,7 +79,7 @@ class ProfileScreen extends StatelessWidget {
               ListTile(
                 leading: _IconBox(
                   icon: Icons.logout_rounded,
-                  color: AppColors.red,
+                  color: AppTheme.primary,
                 ),
                 title: const Text(
                   'تسجيل الخروج',
@@ -98,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
                 Text(
                   'OSA Management',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: Colors.grey.shade600,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -106,7 +114,7 @@ class ProfileScreen extends StatelessWidget {
                 Text(
                   'نظام إدارة Online School Academy',
                   style: TextStyle(
-                    color: AppColors.muted,
+                    color: Colors.grey.shade600,
                     fontSize: 12,
                   ),
                 ),
@@ -118,7 +126,22 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context) async {
+  static String _displayValue(
+    String? value,
+    String fallback,
+  ) {
+    final text = value?.trim();
+
+    if (text == null || text.isEmpty) {
+      return fallback;
+    }
+
+    return text;
+  }
+
+  Future<void> _confirmLogout(
+    BuildContext context,
+  ) async {
     final result = await showDialog<bool>(
       context: context,
       builder: (dialogContext) {
@@ -130,16 +153,22 @@ class ProfileScreen extends StatelessWidget {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(dialogContext, false);
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
               },
               child: const Text('إلغاء'),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.red,
+                backgroundColor: AppTheme.primary,
               ),
               onPressed: () {
-                Navigator.pop(dialogContext, true);
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
               },
               child: const Text('تسجيل الخروج'),
             ),
@@ -178,13 +207,15 @@ class _ProfileHeader extends StatelessWidget {
               width: 88,
               height: 88,
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.10),
+                color: AppTheme.primary.withValues(
+                  alpha: 0.10,
+                ),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
                 Icons.person_rounded,
                 size: 48,
-                color: AppColors.red,
+                color: AppTheme.primary,
               ),
             ),
 
@@ -204,8 +235,8 @@ class _ProfileHeader extends StatelessWidget {
             Text(
               email,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: AppColors.muted,
+              style: TextStyle(
+                color: Colors.grey.shade600,
                 fontSize: 14,
               ),
             ),
@@ -218,7 +249,9 @@ class _ProfileHeader extends StatelessWidget {
                 vertical: 7,
               ),
               decoration: BoxDecoration(
-                color: AppColors.red.withValues(alpha: 0.09),
+                color: AppTheme.primary.withValues(
+                  alpha: 0.09,
+                ),
                 borderRadius: BorderRadius.circular(30),
               ),
               child: Row(
@@ -227,13 +260,13 @@ class _ProfileHeader extends StatelessWidget {
                   const Icon(
                     Icons.shield_outlined,
                     size: 17,
-                    color: AppColors.red,
+                    color: AppTheme.primary,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     role,
                     style: const TextStyle(
-                      color: AppColors.red,
+                      color: AppTheme.primary,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
@@ -261,10 +294,16 @@ class _SectionCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment:
+            CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: const EdgeInsets.fromLTRB(18, 16, 18, 10),
+            padding: const EdgeInsets.fromLTRB(
+              18,
+              16,
+              18,
+              10,
+            ),
             child: Text(
               title,
               style: const TextStyle(
@@ -300,13 +339,13 @@ class _InfoTile extends StatelessWidget {
       ),
       leading: _IconBox(
         icon: icon,
-        color: AppColors.red,
+        color: AppTheme.primary,
       ),
       title: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 13,
-          color: AppColors.muted,
+          color: Colors.grey.shade600,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -339,7 +378,9 @@ class _IconBox extends StatelessWidget {
       width: 42,
       height: 42,
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.09),
+        color: color.withValues(
+          alpha: 0.09,
+        ),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Icon(
