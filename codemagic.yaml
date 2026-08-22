@@ -1,0 +1,28 @@
+workflows:
+  android-release:
+    name: OSA Management Android Release
+    max_build_duration: 120
+    instance_type: linux_x2
+    environment:
+      flutter: stable
+    scripts:
+      - name: Create Android platform files
+        script: |
+          flutter create --platforms=android --project-name osa_management .
+      - name: Configure Android application id
+        script: |
+          sed -i 's/applicationId = "com.example.osa_management"/applicationId = "com.osa.management"/' android/app/build.gradle.kts || true
+          sed -i 's/namespace = "com.example.osa_management"/namespace = "com.osa.management"/' android/app/build.gradle.kts || true
+          sed -i 's/applicationId "com.example.osa_management"/applicationId "com.osa.management"/' android/app/build.gradle || true
+          sed -i 's/namespace "com.example.osa_management"/namespace "com.osa.management"/' android/app/build.gradle || true
+      - name: Get Flutter packages
+        script: flutter pub get
+      - name: Analyze Dart code
+        script: flutter analyze
+      - name: Run unit tests
+        script: flutter test
+      - name: Build Android release APK
+        script: flutter build apk --release
+    artifacts:
+      - build/app/outputs/flutter-apk/*.apk
+      - build/app/outputs/mapping/release/mapping.txt
