@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_theme.dart';
 import '../../core/auth/permissions.dart';
+import '../../core/theme/app_theme.dart';
 import '../../models/dashboard_model.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/dashboard_provider.dart';
-import '../profile/profile_screen.dart';
-import '../students/students_screen.dart';
-import '../teachers/teachers_screen.dart';
+
+import '../attendance/attendance_screen.dart';
 import '../courses/courses_screen.dart';
 import '../groups/groups_screen.dart';
-import '../attendance/attendance_screen.dart';
-import '../subscriptions/subscriptions_screen.dart';
-import '../reports/reports_screen.dart';
 import '../notifications/notifications_screen.dart';
+import '../profile/profile_screen.dart';
+import '../reports/reports_screen.dart';
 import '../settings/settings_screen.dart';
+import '../students/students_screen.dart';
+import '../subscriptions/subscriptions_screen.dart';
+import '../teachers/teachers_screen.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -23,7 +24,9 @@ class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (context) => DashboardProvider(context.read())..load(),
+      create: (context) => DashboardProvider(
+        context.read(),
+      )..load(),
       child: const _DashboardView(),
     );
   }
@@ -51,21 +54,24 @@ class _DashboardViewState extends State<_DashboardView> {
       appBar: AppBar(
         title: const Text('OSA Management'),
         actions: [
+          if (index == 0)
+            IconButton(
+              tooltip: 'تحديث',
+              onPressed: () {
+                context.read<DashboardProvider>().load();
+              },
+              icon: const Icon(
+                Icons.refresh_rounded,
+              ),
+            ),
           IconButton(
+            tooltip: 'حسابي',
             onPressed: () {
-              context.read<DashboardProvider>().load();
+              setState(() => index = 2);
             },
-            icon: const Icon(Icons.refresh_rounded),
-          ),
-          IconButton(
-            onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => const ProfileScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.person_outline_rounded),
+            icon: const Icon(
+              Icons.person_outline_rounded,
+            ),
           ),
         ],
       ),
@@ -77,18 +83,30 @@ class _DashboardViewState extends State<_DashboardView> {
         },
         destinations: const [
           NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard),
+            icon: Icon(
+              Icons.dashboard_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.dashboard,
+            ),
             label: 'الرئيسية',
           ),
           NavigationDestination(
-            icon: Icon(Icons.apps_outlined),
-            selectedIcon: Icon(Icons.apps),
+            icon: Icon(
+              Icons.apps_outlined,
+            ),
+            selectedIcon: Icon(
+              Icons.apps,
+            ),
             label: 'الإدارة',
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
+            icon: Icon(
+              Icons.person_outline,
+            ),
+            selectedIcon: Icon(
+              Icons.person,
+            ),
             label: 'حسابي',
           ),
         ],
@@ -106,16 +124,28 @@ class _HomeTab extends StatelessWidget {
 
     return RefreshIndicator(
       onRefresh: () {
-        return context.read<DashboardProvider>().load();
+        return context
+            .read<DashboardProvider>()
+            .load();
       },
       child: Consumer<DashboardProvider>(
         builder: (context, state, _) {
+          final data = state.data;
+
           return ListView(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(
+              16,
+              16,
+              16,
+              30,
+            ),
             children: [
               _Welcome(
-                userName: auth.user?.name ?? 'مدير النظام',
+                userName:
+                    auth.user?.name ?? 'مدير النظام',
               ),
+
               const SizedBox(height: 18),
 
               if (state.error != null)
@@ -125,11 +155,13 @@ class _HomeTab extends StatelessWidget {
                 ),
 
               if (state.loading &&
-                  state.data.students == 0 &&
-                  state.data.teachers == 0 &&
-                  state.data.courses == 0 &&
-                  state.data.subscriptions == 0 &&
-                  state.data.activities.isEmpty)
+                  data.students == 0 &&
+                  data.teachers == 0 &&
+                  data.todayClasses == 0 &&
+                  data.todayAttendance == 0 &&
+                  data.monthlyIncome == 0 &&
+                  data.monthlyExpenses == 0 &&
+                  data.expiring7Days == 0)
                 const Padding(
                   padding: EdgeInsets.all(32),
                   child: Center(
@@ -137,27 +169,41 @@ class _HomeTab extends StatelessWidget {
                   ),
                 ),
 
-              _StatsGrid(data: state.data),
-
-              const SizedBox(height: 22),
-
-              const Text(
-                'النشاط الأخير',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                ),
+              _SectionTitle(
+                title: 'ملخص اليوم',
+                action: state.loading
+                    ? null
+                    : const Icon(
+                        Icons.today_outlined,
+                        size: 20,
+                      ),
               ),
 
               const SizedBox(height: 10),
 
-              if (state.data.activities.isEmpty)
-                const _EmptyActivity(),
+              _StatsGrid(
+                data: data,
+              ),
 
-              ...state.data.activities.map(
-                (activity) => _ActivityTile(
-                  activity: activity,
-                ),
+              const SizedBox(height: 22),
+
+              _FinancialSummary(
+                data: data,
+              ),
+
+              const SizedBox(height: 22),
+
+              _ExpiringSubscriptions(
+                count: data.expiring7Days,
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          const SubscriptionsScreen(),
+                    ),
+                  );
+                },
               ),
             ],
           );
@@ -192,22 +238,25 @@ class _Welcome extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 52,
-            height: 52,
+            width: 54,
+            height: 54,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
+              color: Colors.white.withValues(
+                alpha: 0.16,
+              ),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.school_rounded,
               color: Colors.white,
-              size: 28,
+              size: 29,
             ),
           ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment:
+                  CrossAxisAlignment.start,
               children: [
                 const Text(
                   'مرحبًا بك',
@@ -216,19 +265,24 @@ class _Welcome extends StatelessWidget {
                     fontSize: 13,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   userName,
+                  maxLines: 1,
+                  overflow:
+                      TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 20,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 const Text(
                   'إليك ملخص نظام الإدارة اليوم',
                   style: TextStyle(
                     color: Colors.white70,
+                    fontSize: 13,
                   ),
                 ),
               ],
@@ -236,6 +290,33 @@ class _Welcome extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SectionTitle extends StatelessWidget {
+  final String title;
+  final Widget? action;
+
+  const _SectionTitle({
+    required this.title,
+    this.action,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const Spacer(),
+        if (action != null) action!,
+      ],
     );
   }
 }
@@ -251,31 +332,38 @@ class _StatsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return GridView.count(
       shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
+      physics:
+          const NeverScrollableScrollPhysics(),
       crossAxisCount: 2,
       mainAxisSpacing: 12,
       crossAxisSpacing: 12,
-      childAspectRatio: 1.55,
+      childAspectRatio: 1.45,
       children: [
         _StatCard(
-          'الطلاب',
-          data.students,
-          Icons.groups_rounded,
+          title: 'الطلاب',
+          value: data.students.toString(),
+          subtitle:
+              '${data.activeStudents} نشط',
+          icon: Icons.groups_rounded,
         ),
         _StatCard(
-          'المدرسون',
-          data.teachers,
-          Icons.person_rounded,
+          title: 'المدرسون',
+          value: data.teachers.toString(),
+          subtitle: 'مدرس نشط',
+          icon: Icons.person_rounded,
         ),
         _StatCard(
-          'الكورسات',
-          data.courses,
-          Icons.menu_book_rounded,
+          title: 'حصص اليوم',
+          value: data.todayClasses.toString(),
+          subtitle: 'حصة مجدولة',
+          icon: Icons.calendar_month_rounded,
         ),
         _StatCard(
-          'الاشتراكات',
-          data.subscriptions,
-          Icons.card_membership_rounded,
+          title: 'حضور اليوم',
+          value:
+              data.todayAttendance.toString(),
+          subtitle: 'سجل حضور',
+          icon: Icons.fact_check_rounded,
         ),
       ],
     );
@@ -284,41 +372,68 @@ class _StatsGrid extends StatelessWidget {
 
 class _StatCard extends StatelessWidget {
   final String title;
-  final int value;
+  final String value;
+  final String subtitle;
   final IconData icon;
 
-  const _StatCard(
-    this.title,
-    this.value,
-    this.icon,
-  );
+  const _StatCard({
+    required this.title,
+    required this.value,
+    required this.subtitle,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(15),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: AppTheme.primary,
-              size: 27,
+            Row(
+              children: [
+                Container(
+                  width: 38,
+                  height: 38,
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withValues(
+                      alpha: 0.09,
+                    ),
+                    borderRadius:
+                        BorderRadius.circular(11),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: AppTheme.primary,
+                    size: 21,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                  ),
+                ),
+              ],
             ),
             const Spacer(),
             Text(
-              value.toString(),
+              value,
               style: const TextStyle(
-                fontSize: 25,
+                fontSize: 26,
                 fontWeight: FontWeight.w900,
               ),
             ),
+            const SizedBox(height: 2),
             Text(
-              title,
+              subtitle,
               style: TextStyle(
                 color: Colors.grey.shade600,
-                fontWeight: FontWeight.w600,
+                fontSize: 12,
               ),
             ),
           ],
@@ -328,69 +443,212 @@ class _StatCard extends StatelessWidget {
   }
 }
 
-class _ActivityTile extends StatelessWidget {
-  final DashboardActivity activity;
+class _FinancialSummary extends StatelessWidget {
+  final DashboardModel data;
 
-  const _ActivityTile({
-    required this.activity,
+  const _FinancialSummary({
+    required this.data,
   });
 
   @override
   Widget build(BuildContext context) {
+    final net = data.monthlyNet;
+    final isPositive = net >= 0;
+
     return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        leading: const CircleAvatar(
-          backgroundColor: Color(0xFFFFE8EA),
-          child: Icon(
-            Icons.notifications_none,
-            color: AppTheme.primary,
-          ),
-        ),
-        title: Text(
-          activity.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        subtitle: Text(activity.subtitle),
-        trailing: Text(
-          activity.time,
-          style: const TextStyle(
-            fontSize: 11,
-          ),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          crossAxisAlignment:
+              CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'ملخص الشهر المالي',
+              style: TextStyle(
+                fontSize: 17,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _MoneyItem(
+                    title: 'الإيرادات',
+                    value:
+                        data.monthlyIncome,
+                    icon:
+                        Icons.trending_up_rounded,
+                  ),
+                ),
+                Expanded(
+                  child: _MoneyItem(
+                    title: 'المصروفات',
+                    value:
+                        data.monthlyExpenses,
+                    icon:
+                        Icons.trending_down_rounded,
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 28),
+            Row(
+              children: [
+                const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  size: 21,
+                ),
+                const SizedBox(width: 8),
+                const Text(
+                  'صافي الشهر',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '${net.toStringAsFixed(2)} ج.م',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: isPositive
+                        ? Colors.green.shade700
+                        : AppColors.red,
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _EmptyActivity extends StatelessWidget {
-  const _EmptyActivity();
+class _MoneyItem extends StatelessWidget {
+  final String title;
+  final double value;
+  final IconData icon;
+
+  const _MoneyItem({
+    required this.title,
+    required this.value,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(28),
-      decoration: BoxDecoration(
-        color: Colors.white,
+    return Row(
+      children: [
+        Icon(
+          icon,
+          color: AppTheme.primary,
+          size: 22,
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                style: TextStyle(
+                  color: Colors.grey.shade600,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${value.toStringAsFixed(2)} ج.م',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ExpiringSubscriptions extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _ExpiringSubscriptions({
+    required this.count,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasWarnings = count > 0;
+
+    return Card(
+      child: InkWell(
         borderRadius: BorderRadius.circular(18),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            Icons.inbox_outlined,
-            size: 42,
-            color: Colors.grey.shade400,
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: hasWarnings
+                      ? Colors.orange.withValues(
+                          alpha: 0.12,
+                        )
+                      : Colors.green.withValues(
+                          alpha: 0.10,
+                        ),
+                  borderRadius:
+                      BorderRadius.circular(14),
+                ),
+                child: Icon(
+                  hasWarnings
+                      ? Icons.warning_amber_rounded
+                      : Icons.check_circle_outline,
+                  color: hasWarnings
+                      ? Colors.orange.shade700
+                      : Colors.green.shade700,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'الاشتراكات القريبة من الانتهاء',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      hasWarnings
+                          ? '$count اشتراك ينتهي خلال 7 أيام'
+                          : 'لا توجد اشتراكات تنتهي خلال 7 أيام',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right_rounded,
+              ),
+            ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'لا توجد أنشطة حديثة',
-            style: TextStyle(
-              color: Colors.grey.shade600,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -446,106 +704,104 @@ class _QuickTab extends StatelessWidget {
         'students',
         'الطلاب',
         Icons.groups_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const StudentsScreen(),
-          ),
+          const StudentsScreen(),
         ),
       ),
       _QuickItem(
         'teachers',
         'المدرسون',
         Icons.person_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const TeachersScreen(),
-          ),
+          const TeachersScreen(),
         ),
       ),
       _QuickItem(
         'courses',
         'الكورسات',
         Icons.menu_book_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const CoursesScreen(),
-          ),
+          const CoursesScreen(),
         ),
       ),
       _QuickItem(
         'groups',
         'المجموعات',
         Icons.groups_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const GroupsScreen(),
-          ),
+          const GroupsScreen(),
         ),
       ),
       _QuickItem(
         'subscriptions',
         'الاشتراكات',
         Icons.card_membership_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const SubscriptionsScreen(),
-          ),
+          const SubscriptionsScreen(),
         ),
       ),
       _QuickItem(
         'attendance',
         'الحضور',
         Icons.fact_check_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const AttendanceScreen(),
-          ),
+          const AttendanceScreen(),
         ),
       ),
       _QuickItem(
         'reports',
         'التقارير',
         Icons.analytics_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const ReportsScreen(),
-          ),
+          const ReportsScreen(),
         ),
       ),
       _QuickItem(
         'notifications',
         'الإشعارات',
         Icons.notifications_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const NotificationsScreen(),
-          ),
+          const NotificationsScreen(),
         ),
       ),
       _QuickItem(
         'settings',
         'الإعدادات',
         Icons.settings_rounded,
-        () => Navigator.push(
+        () => _open(
           context,
-          MaterialPageRoute(
-            builder: (_) => const SettingsScreen(),
-          ),
+          const SettingsScreen(),
         ),
       ),
     ];
 
     final visible = items
-        .where((item) => permissions.can(item.permission))
+        .where(
+          (item) => permissions.can(
+            item.permission,
+          ),
+        )
         .toList();
+
+    if (visible.isEmpty) {
+      return const Center(
+        child: Padding(
+          padding: EdgeInsets.all(30),
+          child: Text(
+            'لا توجد صلاحيات إدارية متاحة لهذا الحساب.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
 
     return GridView.count(
       padding: const EdgeInsets.all(16),
@@ -561,6 +817,18 @@ class _QuickTab extends StatelessWidget {
             ),
           )
           .toList(),
+    );
+  }
+
+  static void _open(
+    BuildContext context,
+    Widget screen,
+  ) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => screen,
+      ),
     );
   }
 }
@@ -597,7 +865,8 @@ class _QuickCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment:
+              MainAxisAlignment.center,
           children: [
             Icon(
               icon,
