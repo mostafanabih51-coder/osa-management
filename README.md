@@ -1,21 +1,21 @@
-# Online School Academy Management System v1.1
+# OSA Management
 
-## Structure
-- `backend/` Laravel 11 + Sanctum API
-- `mobile/` Flutter management application
+Online School Academy Management System.
 
-## cPanel deployment
-1. Upload `backend` outside the public web root if possible.
-2. Set the subdomain document root to `backend/public`.
-3. In cPanel Terminal: `cd /path/to/backend`
-4. Run: `composer install --no-dev --optimize-autoloader`
-5. Copy `.env.example` to `.env` and set MySQL credentials.
-6. Run: `php artisan key:generate`
-7. Run: `php artisan migrate --seed`
-8. Run: `php artisan storage:link`
-9. Test: `https://admin.muteatalriyadiaat.com/` and `/api/health`.
+## Project Structure
 
-## Initial admin
-Email: `admin@onlineschoolacademy.com`
-Password: `ChangeMe123!`
-Change this immediately after first login.
+- `backend/` — Laravel API backend with Sanctum authentication.
+- `mobile/` — Flutter management application.
+
+## Backend
+
+The backend runs on Laravel and provides the API used by the Flutter management app.
+
+### cPanel deployment
+
+1. Set the subdomain document root to `backend/public`.
+2. In cPanel Terminal:
+
+```bash
+cd /path/to/backend
+composer install --no-dev --optimize-autoloader
