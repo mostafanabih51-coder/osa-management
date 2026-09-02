@@ -1,0 +1,58 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ApiController;
+
+Route::get('/health', fn () => [
+    'status' => 'ok',
+    'service' => 'osa-api',
+    'version' => '1.1',
+]);
+
+Route::post('/login', [ApiController::class, 'login']);
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Current authenticated user
+    Route::get('/user', fn () => request()->user());
+
+    // Authentication
+    Route::post('/logout', [ApiController::class, 'logout']);
+
+    // Dashboard
+    Route::get('/dashboard', [ApiController::class, 'dashboard']);
+
+    // Students
+    Route::apiResource('students', ApiController::class)
+        ->only(['index', 'store', 'show', 'update', 'destroy']);
+
+    // Teachers
+    Route::get('/teachers', [ApiController::class, 'teachers']);
+    Route::post('/teachers', [ApiController::class, 'storeTeacher']);
+
+    // Schedules
+    Route::get('/schedules', [ApiController::class, 'schedules']);
+    Route::post('/schedules', [ApiController::class, 'storeSchedule']);
+
+    // Attendance
+    Route::get('/attendance', [ApiController::class, 'attendance']);
+    Route::post('/attendance', [ApiController::class, 'storeAttendance']);
+
+    // Subscriptions
+    Route::get('/subscriptions', [ApiController::class, 'subscriptions']);
+    Route::post('/subscriptions', [ApiController::class, 'storeSubscription']);
+
+    // Payments
+    Route::get('/payments', [ApiController::class, 'payments']);
+    Route::post('/payments', [ApiController::class, 'storePayment']);
+
+    // Expenses
+    Route::get('/expenses', [ApiController::class, 'expenses']);
+    Route::post('/expenses', [ApiController::class, 'storeExpense']);
+
+    // Teacher dues
+    Route::get('/teacher-dues', [ApiController::class, 'teacherDues']);
+
+    // Financial reports
+    Route::get('/reports/financial', [ApiController::class, 'financialReport']);
+});

@@ -1,0 +1,11 @@
+name: osa_management
+description: Online School Academy management app
+publish_to: none
+environment:
+  sdk: '>=3.3.0 <4.0.0'
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.2
+  shared_preferences: ^2.3.2
+  intl: ^0.19.0
