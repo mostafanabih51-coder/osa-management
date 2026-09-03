@@ -81,8 +81,8 @@ class _SubscriptionsViewState extends State<_SubscriptionsView> {
         const SizedBox(height: 12), Row(children: [Expanded(child: _field(start, 'تاريخ البداية', Icons.date_range_outlined, false)), const SizedBox(width: 10), Expanded(child: _field(end, 'تاريخ النهاية', Icons.event_outlined, false))]),
         _field(notes, 'ملاحظات', Icons.notes_outlined, false, maxLines: 3), const SizedBox(height: 18),
         FilledButton.icon(onPressed: () async { if (!key.currentState!.validate()) return; final ok = await context.read<SubscriptionsProvider>().save(id: item?.id, data: {'student_id': int.tryParse(student.text.trim()) ?? 0, 'course_id': int.tryParse(course.text.trim()) ?? 0, 'amount': num.tryParse(amount.text.trim()) ?? 0, 'paid_amount': num.tryParse(paid.text.trim()) ?? 0, 'status': status, 'start_date': start.text.trim(), 'end_date': end.text.trim(), 'notes': notes.text.trim()}); if (ok && sheet.mounted) Navigator.pop(sheet); }, icon: const Icon(Icons.save_outlined), label: const Text('حفظ الاشتراك')),
-      ])),
-    )));
+      ]))),
+    ));
     for (final c in [student, course, amount, paid, start, end, notes]) c.dispose();
   }
 
