@@ -1,13 +1,14 @@
-name: OSA Management Android Build
+name: Build Android APK
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
+      - master
+  workflow_dispatch:
 
 jobs:
-  build-apk:
+  build:
     runs-on: ubuntu-latest
 
     defaults:
@@ -15,7 +16,7 @@ jobs:
         working-directory: mobile
 
     steps:
-      - name: Checkout OSA
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Java
@@ -27,11 +28,29 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
           flutter-version: '3.35.7'
+          channel: stable
           cache: true
 
-      - name: Get packages
+      - name: Backup Flutter code
+        run: |
+          mkdir -p /tmp/osa_backup
+          cp pubspec.yaml /tmp/osa_backup/pubspec.yaml
+          cp -r lib /tmp/osa_backup/lib
+
+      - name: Create fresh Flutter Android project
+        run: |
+          flutter create -t app --platforms=android --project-name osa_management /tmp/osa_fresh
+
+      - name: Replace project files
+        run: |
+          rm -rf android
+          cp -r /tmp/osa_fresh/android android
+          cp /tmp/osa_backup/pubspec.yaml pubspec.yaml
+          rm -rf lib
+          cp -r /tmp/osa_backup/lib lib
+
+      - name: Get dependencies
         run: flutter pub get
 
       - name: Analyze
