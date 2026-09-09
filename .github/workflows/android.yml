@@ -1,34 +1,129 @@
-name: Create OSA Release Keystore
+name: Build Android APK
 
 on:
+  push:
+    branches:
+      - main
+      - master
   workflow_dispatch:
 
 jobs:
-  create-keystore:
+  build:
     runs-on: ubuntu-latest
 
+    defaults:
+      run:
+        working-directory: mobile
+
     steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
       - name: Setup Java
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Create Release Keystore
-        run: |
-          keytool -genkeypair \
-            -v \
-            -keystore osa-release-key.jks \
-            -alias osa \
-            -keyalg RSA \
-            -keysize 2048 \
-            -validity 10000 \
-            -storepass OSARelease2026! \
-            -keypass OSARelease2026! \
-            -dname "CN=OSA, OU=OSA, O=Online School Academy, L=Cairo, ST=Cairo, C=EG"
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+          channel: stable
+          cache: true
 
-      - name: Upload Keystore
+      - name: Create Android platform
+        run: flutter create --platforms=android .
+
+      - name: Setup release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/osa-release-key.jks
+          cat > android/key.properties <<EOF
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEYSTORE_ALIAS
+          storeFile=osa-release-key.jks
+          EOF
+
+      - name: Configure release signing
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          p = Path("android/app/build.gradle.kts")
+          text = p.read_text()
+
+          marker = 'import java.util.Properties\nimport java.io.FileInputStream\n'
+          if marker not in text:
+              text = marker + text
+
+          load_block = '''
+          val keystoreProperties = Properties()
+          val keystorePropertiesFile = rootProject.file("key.properties")
+          if (keystorePropertiesFile.exists()) {
+              keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+          }
+
+          '''
+
+          if 'val keystoreProperties = Properties()' not in text:
+              text = text.replace(
+                  'plugins {',
+                  load_block + 'plugins {',
+                  1
+              )
+
+          signing_block = '''
+              signingConfigs {
+                  create("release") {
+                      keyAlias = keystoreProperties.getProperty("keyAlias")
+                      keyPassword = keystoreProperties.getProperty("keyPassword")
+                      storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }
+                      storePassword = keystoreProperties.getProperty("storePassword")
+                  }
+              }
+
+          '''
+
+          if 'create("release")' not in text:
+              text = text.replace(
+                  '    buildTypes {',
+                  signing_block + '    buildTypes {',
+                  1
+              )
+
+          text = text.replace(
+              'signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = signingConfigs.getByName("release")'
+          )
+
+          p.write_text(text)
+          PY
+
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
+
+      - name: Clean build
+        run: flutter clean
+
+      - name: Build APK
+        run: flutter build apk --release
+
+      - name: Verify APK
+        run: |
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
+          file build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: osa-release-keystore
-          path: osa-release-key.jks
+          name: osa-management-release-signed
+          path: mobile/build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
