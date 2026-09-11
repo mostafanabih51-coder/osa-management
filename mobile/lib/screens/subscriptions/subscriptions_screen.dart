@@ -33,17 +33,28 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     final starts = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
     final ends = TextEditingController(text: DateTime.now().add(const Duration(days: 30)).toIso8601String().substring(0, 10));
     final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-      title: const Text('إضافة اشتراك'),
-      content: Form(key: key, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((s) => DropdownMenuItem<int>(value: s['id'] as int, child: Text('${s['name'] ?? ''}'))).toList(), onChanged: (v) { if (v != null) studentId = v; }),
-        TextFormField(controller: subject, decoration: const InputDecoration(labelText: 'المادة'), validator: (v) => v == null || v.trim().isEmpty ? 'أدخل المادة' : null),
-        TextFormField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل مبلغًا صحيحًا' : null),
-        TextFormField(controller: starts, decoration: const InputDecoration(labelText: 'بداية الاشتراك')),
-        TextFormField(controller: ends, decoration: const InputDecoration(labelText: 'نهاية الاشتراك')),
-      ])),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ'))],
-    ));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة اشتراك'),
+        content: Form(
+          key: key,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((s) => DropdownMenuItem<int>(value: s['id'] as int, child: Text('${s['name'] ?? ''}'))).toList(), onChanged: (v) { if (v != null) studentId = v; }),
+              TextFormField(controller: subject, decoration: const InputDecoration(labelText: 'المادة'), validator: (v) => v == null || v.trim().isEmpty ? 'أدخل المادة' : null),
+              TextFormField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل مبلغًا صحيحًا' : null),
+              TextFormField(controller: starts, decoration: const InputDecoration(labelText: 'بداية الاشتراك')),
+              TextFormField(controller: ends, decoration: const InputDecoration(labelText: 'نهاية الاشتراك')),
+            ]),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ')),
+        ],
+      ),
+    );
     if (ok != true) return;
     try {
       await ApiService.post('subscriptions', {'student_id': studentId, 'subject': subject.text.trim(), 'amount': double.parse(amount.text), 'starts_on': starts.text.trim(), 'ends_on': ends.text.trim(), 'status': 'active'});
