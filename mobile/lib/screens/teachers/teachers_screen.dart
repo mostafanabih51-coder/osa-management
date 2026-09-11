@@ -61,21 +61,41 @@ class _TeachersScreenState extends State<TeachersScreen> {
                         decoration: const InputDecoration(labelText: 'اسم المدرس *'),
                         validator: (v) => v == null || v.trim().isEmpty ? 'اكتب اسم المدرس' : null,
                       ),
-                      TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'الهاتف')),
-                      TextFormField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'البريد الإلكتروني'), validator: (v) {
-                        final value = v?.trim() ?? '';
-                        if (value.isEmpty) return null;
-                        return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value) ? null : 'البريد الإلكتروني غير صحيح';
-                      }),
-                      TextFormField(controller: specialization, decoration: const InputDecoration(labelText: 'التخصص')),
-                      TextFormField(controller: hourlyRate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'الأجر بالساعة')),
+                      TextFormField(
+                        controller: phone,
+                        decoration: const InputDecoration(labelText: 'الهاتف'),
+                      ),
+                      TextFormField(
+                        controller: email,
+                        keyboardType: TextInputType.emailAddress,
+                        decoration: const InputDecoration(labelText: 'البريد الإلكتروني'),
+                        validator: (v) {
+                          final value = v?.trim() ?? '';
+                          if (value.isEmpty) return null;
+                          return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(value)
+                              ? null
+                              : 'البريد الإلكتروني غير صحيح';
+                        },
+                      ),
+                      TextFormField(
+                        controller: specialization,
+                        decoration: const InputDecoration(labelText: 'التخصص'),
+                      ),
+                      TextFormField(
+                        controller: hourlyRate,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'الأجر بالساعة'),
+                      ),
                     ],
                   ),
                 ),
               ),
             ),
             actions: [
-              TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
+              TextButton(
+                onPressed: saving ? null : () => Navigator.pop(dialogContext),
+                child: const Text('إلغاء'),
+              ),
               FilledButton(
                 onPressed: saving
                     ? null
@@ -88,22 +108,42 @@ class _TeachersScreenState extends State<TeachersScreen> {
                             'phone': _nullable(phone.text),
                             'email': _nullable(email.text),
                             'specialization': _nullable(specialization.text),
-                            'hourly_rate': hourlyRate.text.trim().isEmpty ? null : double.tryParse(hourlyRate.text.trim()),
+                            'hourly_rate': hourlyRate.text.trim().isEmpty
+                                ? null
+                                : double.tryParse(hourlyRate.text.trim()),
                             'status': 'active',
                           });
                           if (!mounted) return;
                           Navigator.pop(dialogContext);
                           await loadTeachers();
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة المدرس بنجاح')));
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('تمت إضافة المدرس بنجاح')),
+                            );
+                          }
                         } on ApiException catch (e) {
                           setDialogState(() => saving = false);
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.message)),
+                            );
+                          }
                         } catch (_) {
                           setDialogState(() => saving = false);
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر حفظ المدرس')));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('تعذر حفظ المدرس')),
+                            );
+                          }
                         }
                       },
-                child: saving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('حفظ'),
+                child: saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('حفظ'),
               ),
             ],
           ),
@@ -135,7 +175,12 @@ class _TeachersScreenState extends State<TeachersScreen> {
           : teachers.isEmpty
               ? RefreshIndicator(
                   onRefresh: loadTeachers,
-                  child: ListView(children: const [SizedBox(height: 260), Center(child: Text('لا يوجد مدرسون حاليًا')))]),
+                  child: ListView(
+                    children: const [
+                      SizedBox(height: 260),
+                      Center(child: Text('لا يوجد مدرسون حاليًا')),
+                    ],
+                  ),
                 )
               : RefreshIndicator(
                   onRefresh: loadTeachers,
@@ -147,8 +192,17 @@ class _TeachersScreenState extends State<TeachersScreen> {
                       return Card(
                         margin: const EdgeInsets.only(bottom: 10),
                         child: ListTile(
-                          leading: CircleAvatar(backgroundColor: AppColors.black, child: Text('${index + 1}', style: const TextStyle(color: Colors.white))),
-                          title: Text('${teacher['name'] ?? 'بدون اسم'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                          leading: CircleAvatar(
+                            backgroundColor: AppColors.black,
+                            child: Text(
+                              '${index + 1}',
+                              style: const TextStyle(color: Colors.white),
+                            ),
+                          ),
+                          title: Text(
+                            '${teacher['name'] ?? 'بدون اسم'}',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
                           subtitle: Text('${teacher['phone'] ?? teacher['email'] ?? ''}'),
                           trailing: const Icon(Icons.chevron_left),
                         ),
