@@ -5,7 +5,7 @@ use App\Http\Controllers\ApiController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LessonController;
 
-Route::get('/health', fn () => ['status' => 'ok', 'service' => 'osa-api', 'version' => '1.2']);
+Route::get('/health', fn () => ['status' => 'ok', 'service' => 'osa-api', 'version' => '1.3']);
 Route::post('/login', [ApiController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -16,6 +16,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('students', ApiController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
     Route::get('/teachers', [ApiController::class, 'teachers']);
     Route::post('/teachers', [ApiController::class, 'storeTeacher']);
+    Route::get('/teachers/{teacher}', [ApiController::class, 'teacherDetails']);
+    Route::get('/supervisors', [ApiController::class, 'supervisors']);
+    Route::post('/supervisors', [ApiController::class, 'storeSupervisor']);
     Route::get('/schedules', [ApiController::class, 'schedules']);
     Route::post('/schedules', [ApiController::class, 'storeSchedule']);
     Route::get('/attendance', [ApiController::class, 'attendance']);
@@ -30,7 +33,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/expenses', [ApiController::class, 'storeExpense']);
         Route::get('/teacher-dues', [ApiController::class, 'teacherDues']);
         Route::get('/reports/financial', [ApiController::class, 'financialReport']);
-
         Route::get('/finance/teacher-dues', [FinanceController::class, 'teacherDues']);
         Route::get('/finance/supervisor-dues', [FinanceController::class, 'supervisorDues']);
         Route::get('/finance/bonuses', [FinanceController::class, 'bonuses']);
@@ -45,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware('auth:sanctum')->group(function () {
     Route::get('/lessons', [LessonController::class, 'index']);
     Route::post('/lessons', [LessonController::class, 'store']);
     Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
