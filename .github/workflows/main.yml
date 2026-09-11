@@ -21,6 +21,33 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          tools: composer
+          coverage: none
+
+      - name: Validate Laravel dependencies
+        working-directory: backend
+        run: composer install --no-dev --prefer-dist --no-interaction --no-progress --optimize-autoloader
+
+      - name: Validate Laravel PHP syntax
+        working-directory: backend
+        run: |
+          set -euo pipefail
+          find app bootstrap config database routes -type f -name '*.php' -print0 | xargs -0 -n1 php -l
+
+      - name: Validate Laravel routes
+        working-directory: backend
+        run: |
+          cp .env.example .env
+          php artisan key:generate --force
+          php artisan route:list --path=api >/dev/null
+
+      - name: Production API health check
+        run: curl --fail --silent --show-error --retry 3 --retry-delay 2 https://admin.muteatalriyadiaat.com/api/health
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
