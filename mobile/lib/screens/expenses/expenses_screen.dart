@@ -12,6 +12,7 @@ class ExpensesScreen extends StatefulWidget {
 class _ExpensesScreenState extends State<ExpensesScreen> {
   List expenses = [];
   bool loading = true;
+  String? error;
 
   @override
   void initState() {
@@ -20,6 +21,10 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
 
   Future<void> loadExpenses() async {
+    setState(() {
+      loading = true;
+      error = null;
+    });
     try {
       final result = await ApiService.get('expenses');
       if (!mounted) return;
@@ -27,56 +32,84 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
         expenses = result['data'] ?? result['expenses'] ?? [];
         loading = false;
       });
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        loading = false;
+        error = e.toString().replaceFirst('Exception: ', '');
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('المصروفات')),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.red,
-        foregroundColor: Colors.white,
-        onPressed: () {},
-        child: const Icon(Icons.add),
+      appBar: AppBar(
+        title: const Text('المصروفات'),
+        actions: [
+          IconButton(
+            onPressed: loading ? null : loadExpenses,
+            icon: const Icon(Icons.refresh),
+            tooltip: 'تحديث',
+          ),
+        ],
       ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
-          : expenses.isEmpty
-              ? const Center(child: Text('لا توجد مصروفات حاليًا'))
-              : RefreshIndicator(
-                  onRefresh: loadExpenses,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: expenses.length,
-                    itemBuilder: (_, index) {
-                      final item = expenses[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: ListTile(
-                          leading: const CircleAvatar(
-                            child: Icon(Icons.money_off),
-                          ),
-                          title: Text(
-                            '${item['title'] ?? item['description'] ?? 'مصروف'}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          subtitle: Text('${item['date'] ?? ''}'),
-                          trailing: Text(
-                            '${item['amount'] ?? 0}',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
+          : error != null
+              ? Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.cloud_off, size: 52),
+                        const SizedBox(height: 12),
+                        Text(error!, textAlign: TextAlign.center),
+                        const SizedBox(height: 16),
+                        FilledButton(
+                          onPressed: loadExpenses,
+                          child: const Text('إعادة المحاولة'),
                         ),
-                      );
-                    },
+                      ],
+                    ),
                   ),
-                ),
+                )
+              : expenses.isEmpty
+                  ? RefreshIndicator(
+                      onRefresh: loadExpenses,
+                      child: ListView(
+                        children: const [
+                          SizedBox(height: 220),
+                          Center(child: Text('لا توجد مصروفات حاليًا')),
+                        ],
+                      ),
+                    )
+                  : RefreshIndicator(
+                      onRefresh: loadExpenses,
+                      child: ListView.builder(
+                        padding: const EdgeInsets.all(16),
+                        itemCount: expenses.length,
+                        itemBuilder: (_, index) {
+                          final item = expenses[index] as Map<String, dynamic>;
+                          return Card(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: ListTile(
+                              leading: const CircleAvatar(child: Icon(Icons.money_off)),
+                              title: Text(
+                                '${item['category'] ?? item['description'] ?? 'مصروف'}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              subtitle: Text('${item['spent_on'] ?? ''}'),
+                              trailing: Text(
+                                '${item['amount'] ?? 0}',
+                                style: const TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
     );
   }
 }
