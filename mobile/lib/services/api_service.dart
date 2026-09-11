@@ -3,6 +3,16 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../config.dart';
 
+class ApiException implements Exception {
+  final int statusCode;
+  final String message;
+
+  const ApiException(this.statusCode, this.message);
+
+  @override
+  String toString() => message;
+}
+
 class ApiService {
   static const _tokenKey = 'osa_auth_token';
   static String? token;
@@ -10,15 +20,27 @@ class ApiService {
   static Future<bool> restoreSession() async {
     final prefs = await SharedPreferences.getInstance();
     final savedToken = prefs.getString(_tokenKey);
-    if (savedToken == null || savedToken.isEmpty) return false;
+    if (savedToken == null || savedToken.isEmpty) {
+      token = null;
+      return false;
+    }
 
     token = savedToken;
     try {
       await get('user');
       return true;
+    } on ApiException catch (e) {
+      // Only an explicit authentication failure invalidates a saved session.
+      // Network/server errors should not silently log the administrator out.
+      if (e.statusCode == 401) {
+        await clearSession();
+        return false;
+      }
+      return true;
     } catch (_) {
-      await clearSession();
-      return false;
+      // Keep the saved token on transient connectivity errors. The dashboard
+      // can display the actual connection error and retry without a login loop.
+      return true;
     }
   }
 
@@ -33,18 +55,24 @@ class ApiService {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({'email': email, 'password': password}),
+          body: jsonEncode({
+            'email': email.trim(),
+            'password': password,
+          }),
         )
         .timeout(const Duration(seconds: 20));
 
     final data = _decode(response);
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(_message(data, 'بيانات الدخول غير صحيحة'));
+      throw ApiException(
+        response.statusCode,
+        _message(data, 'بيانات الدخول غير صحيحة'),
+      );
     }
 
     final newToken = data['token'];
     if (newToken is! String || newToken.isEmpty) {
-      throw Exception('الخادم لم يُرجع رمز تسجيل دخول صالحًا');
+      throw const ApiException(500, 'الخادم لم يُرجع رمز تسجيل دخول صالحًا');
     }
 
     token = newToken;
@@ -78,7 +106,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> get(String endpoint) async {
     if (token == null || token!.isEmpty) {
-      throw Exception('انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
+      throw const ApiException(401, 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
     }
 
     final response = await http
@@ -91,10 +119,13 @@ class ApiService {
     final data = _decode(response);
     if (response.statusCode == 401) {
       await clearSession();
-      throw Exception('انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
+      throw const ApiException(401, 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
     }
     if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(_message(data, 'تعذر تحميل البيانات'));
+      throw ApiException(
+        response.statusCode,
+        _message(data, 'تعذر تحميل البيانات'),
+      );
     }
 
     return data;
