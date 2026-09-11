@@ -1,93 +1,17 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class SchedulesScreen extends StatefulWidget {
-  const SchedulesScreen({super.key});
-
-  @override
-  State<SchedulesScreen> createState() => _SchedulesScreenState();
-}
-
-class _SchedulesScreenState extends State<SchedulesScreen> {
-  List schedules = [];
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    loadSchedules();
-  }
-
-  Future<void> loadSchedules() async {
-    try {
-      final result = await ApiService.get('schedules');
-      if (!mounted) return;
-      setState(() {
-        schedules = result['data'] ?? result['schedules'] ?? [];
-        loading = false;
-        error = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-        error = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('الجداول والحصص')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: loadSchedules, child: const Text('إعادة المحاولة')),
-                  ]),
-                ))
-              : schedules.isEmpty
-                  ? RefreshIndicator(
-                      onRefresh: loadSchedules,
-                      child: ListView(children: const [
-                        SizedBox(height: 220),
-                        Center(child: Text('لا توجد حصص مسجلة حاليًا', style: TextStyle(fontSize: 18))),
-                      ]),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: loadSchedules,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: schedules.length,
-                        itemBuilder: (_, index) {
-                          final item = schedules[index] as Map<String, dynamic>;
-                          final teacher = item['teacher'];
-                          final student = item['student'];
-                          final teacherName = teacher is Map ? '${teacher['name'] ?? ''}' : '';
-                          final studentName = student is Map ? '${student['name'] ?? ''}' : '';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: const CircleAvatar(child: Icon(Icons.video_camera_front)),
-                              title: Text('${item['subject'] ?? 'حصة'}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text([
-                                if (item['starts_at'] != null) '${item['starts_at']}',
-                                if (teacherName.isNotEmpty) 'المدرس: $teacherName',
-                                if (studentName.isNotEmpty) 'الطالب: $studentName',
-                              ].join('\n')),
-                              isThreeLine: teacherName.isNotEmpty || studentName.isNotEmpty,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-    );
-  }
+class SchedulesScreen extends StatefulWidget { const SchedulesScreen({super.key}); @override State<SchedulesScreen> createState()=>_SchedulesScreenState(); }
+class _SchedulesScreenState extends State<SchedulesScreen>{
+ List schedules=[],teachers=[],students=[]; bool loading=true; String? error;
+ @override void initState(){super.initState();load();}
+ Future<void> load() async { try{final r=await Future.wait([ApiService.get('schedules'),ApiService.get('teachers'),ApiService.get('students')]); if(!mounted)return; setState((){schedules=r[0]['data']??[];teachers=r[1]['data']??[];students=r[2]['data']??[];loading=false;error=null;});}catch(e){if(mounted)setState((){loading=false;error=e.toString().replaceFirst('Exception: ','');});}}
+ Future<void> add() async {
+  if(teachers.isEmpty){_msg('أضف مدرسًا أولًا');return;}
+  int teacherId=teachers.first['id']; int? studentId=students.isEmpty?null:students.first['id']; final subject=TextEditingController(); final group=TextEditingController(); final start=TextEditingController(text:DateTime.now().toIso8601String().substring(0,16).replaceFirst('T',' ')); final end=TextEditingController(text:DateTime.now().add(const Duration(hours:1)).toIso8601String().substring(0,16).replaceFirst('T',' ')); final zoom=TextEditingController(); String type='private'; final key=GlobalKey<FormState>();
+  final ok=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,setD)=>AlertDialog(title:const Text('إضافة جدول / حصة'),content:SingleChildScrollView(child:Form(key:key,child:Column(mainAxisSize:MainAxisSize.min,children:[DropdownButtonFormField<String>(value:type,items:const [DropdownMenuItem(value:'private',child:Text('فردية')),DropdownMenuItem(value:'group',child:Text('مجموعة'))],onChanged:(v){if(v!=null)setD(()=>type=v);},decoration:const InputDecoration(labelText:'نوع الحصة')),DropdownButtonFormField<int>(value:teacherId,items:teachers.map((x)=>DropdownMenuItem<int>(value:x['id'],child:Text('${x['name']??''}'))).toList(),onChanged:(v){if(v!=null)setD(()=>teacherId=v);},decoration:const InputDecoration(labelText:'المدرس')),if(type=='private'&&students.isNotEmpty)DropdownButtonFormField<int>(value:studentId,items:students.map((x)=>DropdownMenuItem<int>(value:x['id'],child:Text('${x['name']??''}'))).toList(),onChanged:(v){setD(()=>studentId=v);},decoration:const InputDecoration(labelText:'الطالب')),if(type=='group')TextFormField(controller:group,decoration:const InputDecoration(labelText:'اسم المجموعة'),validator:(v)=>v!.trim().isEmpty?'اكتب اسم المجموعة':null),TextFormField(controller:subject,decoration:const InputDecoration(labelText:'المادة'),validator:(v)=>v!.trim().isEmpty?'اكتب المادة':null),TextFormField(controller:start,decoration:const InputDecoration(labelText:'البداية YYYY-MM-DD HH:MM'),validator:(v)=>v!.trim().isEmpty?'مطلوب':null),TextFormField(controller:end,decoration:const InputDecoration(labelText:'النهاية YYYY-MM-DD HH:MM'),validator:(v)=>v!.trim().isEmpty?'مطلوب':null),TextFormField(controller:zoom,decoration:const InputDecoration(labelText:'رابط Zoom (اختياري)'))]))),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(key.currentState!.validate())Navigator.pop(c,true);},child:const Text('حفظ'))]));
+  if(ok!=true)return; try{final a=DateTime.parse(start.text.replaceFirst(' ','T'));final b=DateTime.parse(end.text.replaceFirst(' ','T'));if(!b.isAfter(a))throw Exception('وقت النهاية يجب أن يكون بعد البداية');await ApiService.post('schedules',{'teacher_id':teacherId,'student_id':type=='private'?studentId:null,'group_name':type=='group'?group.text.trim():null,'subject':subject.text.trim(),'starts_at':start.text.replaceFirst(' ','T'),'ends_at':end.text.replaceFirst(' ','T'),'zoom_url':zoom.text.trim().isEmpty?null:zoom.text.trim()});await load();_msg('تم حفظ الجدول');}catch(e){_msg(e.toString().replaceFirst('Exception: ',''));}
+ }
+ void _msg(String x){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(x)));}
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('الجداول والحصص'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton(onPressed:add,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):error!=null?Center(child:Text(error!)):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:schedules.length,itemBuilder:(_,i){final x=schedules[i];final t=x['teacher'];final s=x['student'];return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.calendar_month)),title:Text('${x['subject']??'حصة'}'),subtitle:Text('${x['starts_at']??''}\nالمدرس: ${t is Map?t['name']??'':'غير محدد'}${s is Map?'\nالطالب: ${s['name']??''}':''}${x['group_name']!=null?'\nالمجموعة: ${x['group_name']}':''}'));}));
 }
