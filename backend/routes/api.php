@@ -19,6 +19,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/teachers/{teacher}', [ApiController::class, 'teacherDetails']);
     Route::get('/supervisors', [ApiController::class, 'supervisors']);
     Route::post('/supervisors', [ApiController::class, 'storeSupervisor']);
+
+    Route::get('/groups', [ApiController::class, 'groups']);
+    Route::post('/groups', [ApiController::class, 'storeGroup']);
+    Route::put('/groups/{group}', [ApiController::class, 'updateGroup']);
+    Route::patch('/groups/{group}', [ApiController::class, 'updateGroup']);
+    Route::delete('/groups/{group}', [ApiController::class, 'destroyGroup']);
+    Route::post('/groups/{group}/students', [ApiController::class, 'addStudentToGroup']);
+    Route::delete('/groups/{group}/students/{student}', [ApiController::class, 'removeStudentFromGroup']);
+
     Route::get('/schedules', [ApiController::class, 'schedules']);
     Route::post('/schedules', [ApiController::class, 'storeSchedule']);
     Route::get('/attendance', [ApiController::class, 'attendance']);
