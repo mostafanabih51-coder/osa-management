@@ -18,21 +18,30 @@ class ApiController extends Controller
         return response()->json(['token' => $user->createToken('management')->plainTextToken, 'user' => $user]);
     }
 
-    public function logout(Request $request) { $request->user()->currentAccessToken()?->delete(); return ['message' => 'تم تسجيل الخروج']; }
-
-    public function dashboard()
+    public function logout(Request $request)
     {
-        return [
+        $request->user()->currentAccessToken()?->delete();
+        return ['message' => 'تم تسجيل الخروج'];
+    }
+
+    public function dashboard(Request $request)
+    {
+        $user = $request->user();
+        $admin = in_array($user->role, ['admin', 'super_admin', 'owner'], true);
+        $data = [
             'academy_name' => 'Online School Academy',
             'students' => Student::count(),
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
             'today_classes' => Schedule::whereDate('starts_at', now())->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'cancelled'))->count(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
-            'monthly_income' => Payment::whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
-            'monthly_expenses' => Expense::whereBetween('spent_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
             'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
+        if ($admin) {
+            $data['monthly_income'] = Payment::whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
+            $data['monthly_expenses'] = Expense::whereBetween('spent_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount');
+        }
+        return $data;
     }
 
     public function index() { return Student::latest()->paginate(25); }
