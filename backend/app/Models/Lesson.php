@@ -57,25 +57,24 @@ class Lesson extends Model
         return $this->belongsTo(Student::class);
     }
 
-    /*
-     * Financial record generated for this lesson.
-     */
     public function teacherDue(): HasOne
     {
-        return $this->hasOne(
-            TeacherLessonDue::class,
-            'lesson_id'
-        );
+        return $this->hasOne(TeacherLessonDue::class, 'lesson_id');
     }
 
-    /*
-     * Financial record generated for the supervisor.
-     */
     public function supervisorDue(): HasOne
     {
-        return $this->hasOne(
-            SupervisorDue::class,
-            'lesson_id'
-        );
+        return $this->hasOne(SupervisorDue::class, 'lesson_id');
+    }
+
+    // Backward-compatible aliases used by the API controller responses.
+    public function teacherDueRecord(): HasOne
+    {
+        return $this->teacherDue();
+    }
+
+    public function supervisorDueRecord(): HasOne
+    {
+        return $this->supervisorDue();
     }
 }
