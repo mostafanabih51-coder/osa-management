@@ -11,58 +11,100 @@ Route::post('/login', [ApiController::class, 'login']);
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn () => request()->user());
     Route::post('/logout', [ApiController::class, 'logout']);
+
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
 
-    Route::apiResource('students', ApiController::class)->only(['index', 'store', 'show', 'update', 'destroy']);
-    Route::get('/teachers', [ApiController::class, 'teachers']);
-    Route::post('/teachers', [ApiController::class, 'storeTeacher']);
-    Route::get('/teachers/{teacher}', [ApiController::class, 'teacherDetails']);
-    Route::get('/supervisors', [ApiController::class, 'supervisors']);
-    Route::post('/supervisors', [ApiController::class, 'storeSupervisor']);
+    Route::middleware('permission:view_students')->group(function () {
+        Route::get('/students', [ApiController::class, 'index']);
+        Route::get('/students/{student}', [ApiController::class, 'show']);
+    });
+    Route::middleware('permission:manage_students')->group(function () {
+        Route::post('/students', [ApiController::class, 'store']);
+        Route::put('/students/{student}', [ApiController::class, 'update']);
+        Route::patch('/students/{student}', [ApiController::class, 'update']);
+        Route::delete('/students/{student}', [ApiController::class, 'destroy']);
+    });
 
-    Route::get('/groups', [ApiController::class, 'groups']);
-    Route::post('/groups', [ApiController::class, 'storeGroup']);
-    Route::put('/groups/{group}', [ApiController::class, 'updateGroup']);
-    Route::patch('/groups/{group}', [ApiController::class, 'updateGroup']);
-    Route::delete('/groups/{group}', [ApiController::class, 'destroyGroup']);
-    Route::post('/groups/{group}/students', [ApiController::class, 'addStudentToGroup']);
-    Route::delete('/groups/{group}/students/{student}', [ApiController::class, 'removeStudentFromGroup']);
+    Route::middleware('permission:view_teachers')->group(function () {
+        Route::get('/teachers', [ApiController::class, 'teachers']);
+        Route::get('/teachers/{teacher}', [ApiController::class, 'teacherDetails']);
+    });
+    Route::middleware('permission:manage_teachers')->group(function () {
+        Route::post('/teachers', [ApiController::class, 'storeTeacher']);
+    });
 
-    Route::get('/schedules', [ApiController::class, 'schedules']);
-    Route::post('/schedules', [ApiController::class, 'storeSchedule']);
-    Route::get('/attendance', [ApiController::class, 'attendance']);
-    Route::post('/attendance', [ApiController::class, 'storeAttendance']);
-    Route::get('/subscriptions', [ApiController::class, 'subscriptions']);
-    Route::post('/subscriptions', [ApiController::class, 'storeSubscription']);
+    Route::middleware('permission:view_supervisors')->group(function () {
+        Route::get('/supervisors', [ApiController::class, 'supervisors']);
+    });
+    Route::middleware('permission:manage_supervisors')->group(function () {
+        Route::post('/supervisors', [ApiController::class, 'storeSupervisor']);
+    });
 
-    Route::middleware('admin')->group(function () {
+    Route::middleware('permission:view_groups')->group(function () {
+        Route::get('/groups', [ApiController::class, 'groups']);
+    });
+    Route::middleware('permission:manage_groups')->group(function () {
+        Route::post('/groups', [ApiController::class, 'storeGroup']);
+        Route::put('/groups/{group}', [ApiController::class, 'updateGroup']);
+        Route::patch('/groups/{group}', [ApiController::class, 'updateGroup']);
+        Route::delete('/groups/{group}', [ApiController::class, 'destroyGroup']);
+        Route::post('/groups/{group}/students', [ApiController::class, 'addStudentToGroup']);
+        Route::delete('/groups/{group}/students/{student}', [ApiController::class, 'removeStudentFromGroup']);
+    });
+
+    Route::middleware('permission:view_schedules')->group(function () {
+        Route::get('/schedules', [ApiController::class, 'schedules']);
+    });
+    Route::middleware('permission:manage_schedules')->group(function () {
+        Route::post('/schedules', [ApiController::class, 'storeSchedule']);
+    });
+
+    Route::middleware('permission:view_attendance')->group(function () {
+        Route::get('/attendance', [ApiController::class, 'attendance']);
+    });
+    Route::middleware('permission:manage_attendance')->group(function () {
+        Route::post('/attendance', [ApiController::class, 'storeAttendance']);
+    });
+
+    Route::middleware('permission:view_subscriptions')->group(function () {
+        Route::get('/subscriptions', [ApiController::class, 'subscriptions']);
+    });
+    Route::middleware('permission:manage_subscriptions')->group(function () {
+        Route::post('/subscriptions', [ApiController::class, 'storeSubscription']);
+    });
+
+    Route::middleware('permission:view_finance')->group(function () {
         Route::get('/payments', [ApiController::class, 'payments']);
-        Route::post('/payments', [ApiController::class, 'storePayment']);
         Route::get('/expenses', [ApiController::class, 'expenses']);
-        Route::post('/expenses', [ApiController::class, 'storeExpense']);
         Route::get('/teacher-dues', [ApiController::class, 'teacherDues']);
         Route::get('/reports/financial', [ApiController::class, 'financialReport']);
         Route::get('/finance/teacher-dues', [FinanceController::class, 'teacherDues']);
         Route::get('/finance/supervisor-dues', [FinanceController::class, 'supervisorDues']);
         Route::get('/finance/bonuses', [FinanceController::class, 'bonuses']);
-        Route::post('/finance/bonuses', [FinanceController::class, 'storeBonus']);
         Route::get('/finance/withdrawal-settings', [FinanceController::class, 'withdrawalSettings']);
-        Route::post('/finance/withdrawal-settings', [FinanceController::class, 'updateWithdrawalSetting']);
         Route::get('/finance/withdrawals', [FinanceController::class, 'withdrawals']);
+        Route::get('/finance/summary', [FinanceController::class, 'summary']);
+    });
+    Route::middleware('permission:manage_finance')->group(function () {
+        Route::post('/payments', [ApiController::class, 'storePayment']);
+        Route::post('/expenses', [ApiController::class, 'storeExpense']);
+        Route::post('/finance/bonuses', [FinanceController::class, 'storeBonus']);
+        Route::post('/finance/withdrawal-settings', [FinanceController::class, 'updateWithdrawalSetting']);
         Route::post('/finance/withdrawals', [FinanceController::class, 'storeWithdrawal']);
         Route::put('/finance/withdrawals/{withdrawal}', [FinanceController::class, 'updateWithdrawal']);
-        Route::get('/finance/summary', [FinanceController::class, 'summary']);
         Route::post('/finance/dues/{type}/{due}/pay', [FinanceController::class, 'payDue']);
     });
-});
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/lessons', [LessonController::class, 'index']);
-    Route::post('/lessons', [LessonController::class, 'store']);
-    Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
-    Route::put('/lessons/{lesson}', [LessonController::class, 'update']);
-    Route::patch('/lessons/{lesson}', [LessonController::class, 'update']);
-    Route::delete('/lessons/{lesson}', [LessonController::class, 'destroy']);
-    Route::post('/lessons/{lesson}/complete', [LessonController::class, 'complete']);
-    Route::post('/lessons/{lesson}/cancel', [LessonController::class, 'cancel']);
+    Route::middleware('permission:view_lessons')->group(function () {
+        Route::get('/lessons', [LessonController::class, 'index']);
+        Route::get('/lessons/{lesson}', [LessonController::class, 'show']);
+    });
+    Route::middleware('permission:manage_lessons')->group(function () {
+        Route::post('/lessons', [LessonController::class, 'store']);
+        Route::put('/lessons/{lesson}', [LessonController::class, 'update']);
+        Route::patch('/lessons/{lesson}', [LessonController::class, 'update']);
+        Route::delete('/lessons/{lesson}', [LessonController::class, 'destroy']);
+        Route::post('/lessons/{lesson}/complete', [LessonController::class, 'complete']);
+        Route::post('/lessons/{lesson}/cancel', [LessonController::class, 'cancel']);
+    });
 });
