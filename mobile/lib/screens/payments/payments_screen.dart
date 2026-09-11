@@ -1,87 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class PaymentsScreen extends StatefulWidget {
-  const PaymentsScreen({super.key});
-
-  @override
-  State<PaymentsScreen> createState() => _PaymentsScreenState();
-}
-
-class _PaymentsScreenState extends State<PaymentsScreen> {
-  List items = [];
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    load();
-  }
-
-  Future<void> load() async {
-    try {
-      final result = await ApiService.get('payments');
-      if (!mounted) return;
-      setState(() {
-        items = result['data'] ?? result['payments'] ?? [];
-        loading = false;
-        error = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-        error = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('المدفوعات')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: load, child: const Text('إعادة المحاولة')),
-                  ]),
-                ))
-              : items.isEmpty
-                  ? RefreshIndicator(
-                      onRefresh: load,
-                      child: ListView(children: const [
-                        SizedBox(height: 220),
-                        Center(child: Text('لا توجد مدفوعات حاليًا')),
-                      ]),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: load,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: items.length,
-                        itemBuilder: (_, i) {
-                          final item = items[i] as Map<String, dynamic>;
-                          final student = item['student'];
-                          final studentName = student is Map ? '${student['name'] ?? 'طالب'}' : 'طالب';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: const CircleAvatar(child: Icon(Icons.payments)),
-                              title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('${item['paid_on'] ?? ''}'),
-                              trailing: Text('${item['amount'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-    );
-  }
+class PaymentsScreen extends StatefulWidget { const PaymentsScreen({super.key}); @override State<PaymentsScreen> createState()=>_PaymentsScreenState(); }
+class _PaymentsScreenState extends State<PaymentsScreen>{
+  List items=[]; List students=[]; bool loading=true;
+  @override void initState(){super.initState(); load();}
+  Future<void> load() async { try { final r=await Future.wait([ApiService.get('payments'),ApiService.get('students')]); if(!mounted)return; setState((){items=(r[0]['data']??[]); students=(r[1]['data']??[]); loading=false;}); } catch(e){if(mounted){setState(()=>loading=false);_msg(e);}}}
+  void _msg(Object e)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));
+  Future<void> add() async { int? studentId; final amount=TextEditingController(); final date=TextEditingController(text:DateTime.now().toIso8601String().substring(0,10)); final method=TextEditingController(text:'نقدي'); final ok=await showDialog<bool>(context:context,builder:(_)=>AlertDialog(title:const Text('إضافة مدفوعات'),content:SingleChildScrollView(child:Column(children:[DropdownButtonFormField<int>(decoration:const InputDecoration(labelText:'الطالب'),items:students.map((s)=>DropdownMenuItem<int>(value:s['id'],child:Text('${s['name']}'))).toList(),onChanged:(v)=>studentId=v),TextField(controller:amount,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'المبلغ')),TextField(controller:date,decoration:const InputDecoration(labelText:'التاريخ YYYY-MM-DD')),TextField(controller:method,decoration:const InputDecoration(labelText:'طريقة الدفع'))])),actions:[TextButton(onPressed:()=>Navigator.pop(context,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(context,true),child:const Text('حفظ'))])); if(ok!=true||studentId==null)return; try{await ApiService.post('payments',{'student_id':studentId,'amount':double.parse(amount.text),'paid_on':date.text,'method':method.text});await load();}catch(e){_msg(e);}}
+  @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('المدفوعات')),floatingActionButton:FloatingActionButton(onPressed:add,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:items.length,itemBuilder:(_,i){final x=items[i];final s=x['student'];return Card(margin:const EdgeInsets.only(bottom:10),child:ListTile(leading:const CircleAvatar(child:Icon(Icons.payments)),title:Text('${s is Map?s['name']:'طالب'}'),subtitle:Text('${x['paid_on']??''} • ${x['method']??''}'),trailing:Text('${x['amount']??0}'));}))); }
 }
