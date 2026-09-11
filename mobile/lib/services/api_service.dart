@@ -30,16 +30,12 @@ class ApiService {
       await get('user');
       return true;
     } on ApiException catch (e) {
-      // Only an explicit authentication failure invalidates a saved session.
-      // Network/server errors should not silently log the administrator out.
       if (e.statusCode == 401) {
         await clearSession();
         return false;
       }
       return true;
     } catch (_) {
-      // Keep the saved token on transient connectivity errors. The dashboard
-      // can display the actual connection error and retry without a login loop.
       return true;
     }
   }
@@ -55,10 +51,7 @@ class ApiService {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
           },
-          body: jsonEncode({
-            'email': email.trim(),
-            'password': password,
-          }),
+          body: jsonEncode({'email': email.trim(), 'password': password}),
         )
         .timeout(const Duration(seconds: 20));
 
@@ -85,14 +78,11 @@ class ApiService {
     try {
       if (token != null) {
         await http
-            .post(
-              Uri.parse('$apiBaseUrl/logout'),
-              headers: _authHeaders(),
-            )
+            .post(Uri.parse('$apiBaseUrl/logout'), headers: _authHeaders())
             .timeout(const Duration(seconds: 10));
       }
     } catch (_) {
-      // Local session is still cleared even when the network is unavailable.
+      // Always clear the local session even when the server is unavailable.
     } finally {
       await clearSession();
     }
@@ -110,31 +100,56 @@ class ApiService {
     }
 
     final response = await http
-        .get(
+        .get(Uri.parse('$apiBaseUrl/$endpoint'), headers: _authHeaders())
+        .timeout(const Duration(seconds: 20));
+
+    return _handleResponse(response, 'تعذر تحميل البيانات');
+  }
+
+  static Future<Map<String, dynamic>> post(
+    String endpoint,
+    Map<String, dynamic> body,
+  ) async {
+    if (token == null || token!.isEmpty) {
+      throw const ApiException(401, 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
+    }
+
+    final response = await http
+        .post(
           Uri.parse('$apiBaseUrl/$endpoint'),
-          headers: _authHeaders(),
+          headers: {..._authHeaders(), 'Content-Type': 'application/json'},
+          body: jsonEncode(body),
         )
         .timeout(const Duration(seconds: 20));
 
-    final data = _decode(response);
-    if (response.statusCode == 401) {
-      await clearSession();
-      throw const ApiException(401, 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
-    }
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw ApiException(
-        response.statusCode,
-        _message(data, 'تعذر تحميل البيانات'),
-      );
-    }
-
-    return data;
+    return _handleResponse(response, 'تعذر حفظ البيانات');
   }
 
   static Map<String, String> _authHeaders() => {
         'Authorization': 'Bearer ${token ?? ''}',
         'Accept': 'application/json',
       };
+
+  static Future<Map<String, dynamic>> _handleResponse(
+    http.Response response,
+    String fallback,
+  ) async {
+    final data = _decode(response);
+    if (response.statusCode == 401) {
+      await clearSession();
+      throw const ApiException(401, 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى');
+    }
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final errors = data['errors'];
+      var message = _message(data, fallback);
+      if (errors is Map && errors.isNotEmpty) {
+        final first = errors.values.first;
+        if (first is List && first.isNotEmpty) message = '${first.first}';
+      }
+      throw ApiException(response.statusCode, message);
+    }
+    return data;
+  }
 
   static Map<String, dynamic> _decode(http.Response response) {
     if (response.body.isEmpty) return <String, dynamic>{};
