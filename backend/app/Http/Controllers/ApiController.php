@@ -32,7 +32,6 @@ class ApiController extends Controller
     public function logout(Request $request)
     {
         $request->user()->currentAccessToken()?->delete();
-
         return ['message' => 'Logged out'];
     }
 
@@ -46,9 +45,7 @@ class ApiController extends Controller
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'monthly_income' => Payment::whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
             'monthly_expenses' => Expense::whereBetween('spent_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
-            'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])
-                ->where('status', 'active')
-                ->count(),
+            'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
     }
 
@@ -79,8 +76,19 @@ class ApiController extends Controller
 
     public function update(Request $request, Student $student)
     {
-        $student->update($request->all());
-        return $student;
+        $data = $request->validate([
+            'name' => 'sometimes|required',
+            'phone' => 'nullable',
+            'parent_name' => 'nullable',
+            'parent_phone' => 'nullable',
+            'email' => 'nullable|email',
+            'grade' => 'nullable',
+            'curriculum' => 'nullable',
+            'status' => 'nullable',
+            'notes' => 'nullable',
+        ]);
+        $student->update($data);
+        return $student->fresh();
     }
 
     public function destroy(Student $student)
@@ -101,7 +109,7 @@ class ApiController extends Controller
             'phone' => 'nullable',
             'email' => 'nullable|email',
             'specialization' => 'nullable',
-            'hourly_rate' => 'nullable|numeric',
+            'hourly_rate' => 'nullable|numeric|min:0',
             'status' => 'nullable',
         ]));
     }
@@ -124,22 +132,17 @@ class ApiController extends Controller
         ]);
 
         $conflict = Schedule::where('teacher_id', $data['teacher_id'])
-            ->where(function ($query) use ($data) {
-                $query->whereBetween('starts_at', [$data['starts_at'], $data['ends_at']])
-                    ->orWhereBetween('ends_at', [$data['starts_at'], $data['ends_at']]);
-            })
+            ->where('starts_at', '<', $data['ends_at'])
+            ->where('ends_at', '>', $data['starts_at'])
             ->exists();
 
         abort_if($conflict, 422, 'Teacher schedule conflict');
-
         return Schedule::create($data);
     }
 
     public function attendance()
     {
-        return Attendance::with(['student', 'teacher', 'schedule'])
-            ->latest('date')
-            ->paginate(100);
+        return Attendance::with(['student', 'teacher', 'schedule'])->latest('date')->paginate(100);
     }
 
     public function storeAttendance(Request $request)
@@ -152,9 +155,7 @@ class ApiController extends Controller
             'status' => ['required', Rule::in(['present', 'absent', 'late', 'excused'])],
             'notes' => 'nullable',
         ]);
-
         $data['marked_at'] = now();
-
         return Attendance::create($data);
     }
 
@@ -168,7 +169,7 @@ class ApiController extends Controller
         return Subscription::create($request->validate([
             'student_id' => 'required|exists:students,id',
             'subject' => 'required',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0',
             'starts_on' => 'required|date',
             'ends_on' => 'required|date|after_or_equal:starts_on',
             'status' => 'nullable',
@@ -185,7 +186,7 @@ class ApiController extends Controller
         return Payment::create($request->validate([
             'student_id' => 'required|exists:students,id',
             'subscription_id' => 'nullable|exists:subscriptions,id',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0',
             'paid_on' => 'required|date',
             'method' => 'nullable',
             'collector' => 'nullable',
@@ -203,7 +204,7 @@ class ApiController extends Controller
     {
         return Expense::create($request->validate([
             'category' => 'required',
-            'amount' => 'required|numeric',
+            'amount' => 'required|numeric|min:0',
             'spent_on' => 'required|date',
             'description' => 'nullable',
         ]));
