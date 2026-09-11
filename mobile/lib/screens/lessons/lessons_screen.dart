@@ -37,21 +37,34 @@ class _LessonsScreenState extends State<LessonsScreen> {
     final ends = TextEditingController(text: '${DateTime.now().toIso8601String().substring(0, 10)} 17:00');
     final rate = TextEditingController(text: '0');
     final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(context: context, builder: (context) => StatefulBuilder(builder: (context, setD) => AlertDialog(
-      title: const Text('إضافة حصة'),
-      content: Form(key: key, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        DropdownButtonFormField<String>(value: type, decoration: const InputDecoration(labelText: 'نوع الحصة'), items: const [DropdownMenuItem(value: 'private', child: Text('خاصة')), DropdownMenuItem(value: 'group', child: Text('مجموعة'))], onChanged: (v) { if (v != null) setD(() => type = v); }),
-        DropdownButtonFormField<int>(value: teacherId, decoration: const InputDecoration(labelText: 'المدرس'), items: teachers.map((x) => DropdownMenuItem<int>(value: x['id'] as int, child: Text('${x['name'] ?? ''}'))).toList(), onChanged: (v) { if (v != null) setD(() => teacherId = v); }),
-        if (type == 'private' && students.isNotEmpty) DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((x) => DropdownMenuItem<int>(value: x['id'] as int, child: Text('${x['name'] ?? ''}'))).toList(), onChanged: (v) => setD(() => studentId = v)),
-        if (type == 'group') TextFormField(controller: groupId, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'رقم المجموعة'), validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل رقم المجموعة' : null),
-        if (supervisors.isNotEmpty) DropdownButtonFormField<int?>(value: supervisorId, decoration: const InputDecoration(labelText: 'المشرف'), items: [const DropdownMenuItem<int?>(value: null, child: Text('بدون مشرف')), ...supervisors.map((x) => DropdownMenuItem<int?>(value: x['id'] as int, child: Text('${x['name'] ?? ''}')))], onChanged: (v) => setD(() => supervisorId = v)),
-        TextFormField(controller: subject, decoration: const InputDecoration(labelText: 'المادة'), validator: (v) => v == null || v.trim().isEmpty ? 'أدخل المادة' : null),
-        TextFormField(controller: starts, decoration: const InputDecoration(labelText: 'البداية YYYY-MM-DD HH:MM')),
-        TextFormField(controller: ends, decoration: const InputDecoration(labelText: 'النهاية YYYY-MM-DD HH:MM')),
-        TextFormField(controller: rate, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مستحق المدرس')),
-      ])),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ'))],
-    )));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setD) => AlertDialog(
+          title: const Text('إضافة حصة'),
+          content: Form(
+            key: key,
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                DropdownButtonFormField<String>(value: type, decoration: const InputDecoration(labelText: 'نوع الحصة'), items: const [DropdownMenuItem(value: 'private', child: Text('خاصة')), DropdownMenuItem(value: 'group', child: Text('مجموعة'))], onChanged: (v) { if (v != null) setD(() => type = v); }),
+                DropdownButtonFormField<int>(value: teacherId, decoration: const InputDecoration(labelText: 'المدرس'), items: teachers.map((x) => DropdownMenuItem<int>(value: x['id'] as int, child: Text('${x['name'] ?? ''}'))).toList(), onChanged: (v) { if (v != null) setD(() => teacherId = v); }),
+                if (type == 'private' && students.isNotEmpty) DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((x) => DropdownMenuItem<int>(value: x['id'] as int, child: Text('${x['name'] ?? ''}'))).toList(), onChanged: (v) => setD(() => studentId = v)),
+                if (type == 'group') TextFormField(controller: groupId, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'رقم المجموعة'), validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل رقم المجموعة' : null),
+                if (supervisors.isNotEmpty) DropdownButtonFormField<int?>(value: supervisorId, decoration: const InputDecoration(labelText: 'المشرف'), items: [const DropdownMenuItem<int?>(value: null, child: Text('بدون مشرف')), ...supervisors.map((x) => DropdownMenuItem<int?>(value: x['id'] as int, child: Text('${x['name'] ?? ''}')))], onChanged: (v) => setD(() => supervisorId = v)),
+                TextFormField(controller: subject, decoration: const InputDecoration(labelText: 'المادة'), validator: (v) => v == null || v.trim().isEmpty ? 'أدخل المادة' : null),
+                TextFormField(controller: starts, decoration: const InputDecoration(labelText: 'البداية YYYY-MM-DD HH:MM')),
+                TextFormField(controller: ends, decoration: const InputDecoration(labelText: 'النهاية YYYY-MM-DD HH:MM')),
+                TextFormField(controller: rate, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'مستحق المدرس')),
+              ]),
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ')),
+          ],
+        ),
+      ),
+    );
     if (ok != true) return;
     if (type == 'private' && studentId == null) { ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('اختر الطالب'))); return; }
     try {
