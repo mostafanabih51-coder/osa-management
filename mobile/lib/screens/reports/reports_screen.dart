@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
+import '../../core/theme/app_theme.dart';
 
 class ReportsScreen extends StatefulWidget {
   const ReportsScreen({super.key});
@@ -46,10 +46,13 @@ class _ReportsScreenState extends State<ReportsScreen> {
   Widget build(BuildContext context) {
     if (loading) return Scaffold(appBar: AppBar(title: const Text('التقارير المالية')), body: const Center(child: CircularProgressIndicator()));
     if (error != null) return Scaffold(appBar: AppBar(title: const Text('التقارير المالية')), body: Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(mainAxisSize: MainAxisSize.min, children: [Text(error!, textAlign: TextAlign.center), const SizedBox(height: 16), FilledButton(onPressed: loadReports, child: const Text('إعادة المحاولة'))]))));
+
     final income = _number(data?['income']);
     final expenses = _number(data?['expenses']);
-    final teacherPaid = _number(data?['teacher_paid']);
-    final supervisorPaid = _number(data?['supervisor_paid']);
+    // expenses already includes teacher/supervisor payments recorded by FinanceController.
+    // Do not subtract teacherPaid/supervisorPaid a second time.
+    final net = income - expenses;
+
     return Scaffold(
       appBar: AppBar(title: const Text('التقارير المالية'), actions: [IconButton(onPressed: loadReports, icon: const Icon(Icons.refresh))]),
       body: RefreshIndicator(
@@ -62,7 +65,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
           _card('المدفوع للمدرسين', data?['teacher_paid'] ?? 0),
           _card('مستحقات المشرفين', data?['supervisor_dues'] ?? 0),
           _card('المدفوع للمشرفين', data?['supervisor_paid'] ?? 0),
-          _card('صافي التشغيل', income - expenses - teacherPaid - supervisorPaid),
+          _card('صافي التشغيل', net),
         ],),
       ),
     );
