@@ -31,16 +31,27 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     final date = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
     final method = TextEditingController(text: 'نقدي');
     final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(context: context, builder: (context) => AlertDialog(
-      title: const Text('إضافة دفعة'),
-      content: Form(key: key, child: SingleChildScrollView(child: Column(mainAxisSize: MainAxisSize.min, children: [
-        DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((s) => DropdownMenuItem<int>(value: s['id'] as int, child: Text('${s['name'] ?? ''}'))).toList(), onChanged: (v) => studentId = v),
-        TextFormField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل مبلغًا صحيحًا' : null),
-        TextFormField(controller: date, decoration: const InputDecoration(labelText: 'التاريخ YYYY-MM-DD')),
-        TextFormField(controller: method, decoration: const InputDecoration(labelText: 'طريقة الدفع')),
-      ])),
-      actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ'))],
-    ));
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('إضافة دفعة'),
+        content: Form(
+          key: key,
+          child: SingleChildScrollView(
+            child: Column(mainAxisSize: MainAxisSize.min, children: [
+              DropdownButtonFormField<int>(value: studentId, decoration: const InputDecoration(labelText: 'الطالب'), items: students.map((s) => DropdownMenuItem<int>(value: s['id'] as int, child: Text('${s['name'] ?? ''}'))).toList(), onChanged: (v) => studentId = v),
+              TextFormField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ'), validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل مبلغًا صحيحًا' : null),
+              TextFormField(controller: date, decoration: const InputDecoration(labelText: 'التاريخ YYYY-MM-DD')),
+              TextFormField(controller: method, decoration: const InputDecoration(labelText: 'طريقة الدفع')),
+            ]),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(context, true); }, child: const Text('حفظ')),
+        ],
+      ),
+    );
     if (ok != true || studentId == null) return;
     try {
       await ApiService.post('payments', {'student_id': studentId, 'amount': double.parse(amount.text), 'paid_on': date.text, 'method': method.text});
