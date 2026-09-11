@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Attendance, Expense, Payment, Schedule, Student, Subscription, Teacher, TeacherDue, TeacherLessonDue, Supervisor, SupervisorDue, User};
+use App\Models\{Attendance, Expense, Group, Payment, Schedule, Student, Subscription, Teacher, TeacherDue, TeacherLessonDue, Supervisor, SupervisorDue, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -50,28 +50,67 @@ class ApiController extends Controller
 
     public function teacherDetails(Teacher $teacher)
     {
-        $teacher->load([
-            'lessons.student',
-            'lessons.group',
-            'lessons.supervisor',
-            'lessonDues.lesson',
-        ]);
+        $teacher->load(['lessons.student','lessons.group','lessons.supervisor','lessonDues.lesson']);
         $dues = $teacher->lessonDues;
-        return response()->json([
-            'success' => true,
-            'data' => [
-                'teacher' => $teacher,
-                'students' => Student::whereHas('lessons', fn($q) => $q->where('teacher_id', $teacher->id))->distinct()->get(),
-                'groups' => $teacher->lessons->pluck('group')->filter()->unique('id')->values(),
-                'due' => $dues->sum('amount'),
-                'paid' => $dues->sum('paid_amount'),
-                'remaining' => max(0, $dues->sum('amount') - $dues->sum('paid_amount')),
-            ],
-        ]);
+        return response()->json(['success'=>true,'data'=>[
+            'teacher'=>$teacher,
+            'students'=>Student::whereHas('lessons', fn($q) => $q->where('teacher_id', $teacher->id))->distinct()->get(),
+            'groups'=>$teacher->lessons->pluck('group')->filter()->unique('id')->values(),
+            'due'=>$dues->sum('amount'),'paid'=>$dues->sum('paid_amount'),'remaining'=>max(0,$dues->sum('amount')-$dues->sum('paid_amount')),
+        ]]);
     }
 
     public function supervisors() { return Supervisor::withCount(['lessons'])->latest()->paginate(50); }
     public function storeSupervisor(Request $request) { return Supervisor::create($request->validate(['name'=>'required','phone'=>'nullable','email'=>'nullable|email','status'=>'nullable','user_id'=>'nullable|exists:users,id'])); }
+
+    public function groups()
+    {
+        return response()->json(['success'=>true,'data'=>Group::withCount('students')->with('students:id,name')->latest()->get()]);
+    }
+
+    public function storeGroup(Request $request)
+    {
+        $data = $request->validate(['name'=>'required|string|max:255','grade'=>'nullable|string|max:100','subject'=>'nullable|string|max:100','status'=>'nullable|string|max:50','notes'=>'nullable|string','student_ids'=>'nullable|array','student_ids.*'=>'integer|exists:students,id']);
+        $studentIds = $data['student_ids'] ?? [];
+        unset($data['student_ids']);
+        $group = DB::transaction(function () use ($data, $studentIds) {
+            $group = Group::create($data);
+            if ($studentIds) $group->students()->sync($studentIds);
+            return $group;
+        });
+        return response()->json(['success'=>true,'data'=>$group->load('students:id,name')],201);
+    }
+
+    public function updateGroup(Request $request, Group $group)
+    {
+        $data = $request->validate(['name'=>'sometimes|required|string|max:255','grade'=>'nullable|string|max:100','subject'=>'nullable|string|max:100','status'=>'nullable|string|max:50','notes'=>'nullable|string','student_ids'=>'nullable|array','student_ids.*'=>'integer|exists:students,id']);
+        DB::transaction(function () use ($group, $data) {
+            $studentIds = $data['student_ids'] ?? null;
+            unset($data['student_ids']);
+            $group->update($data);
+            if ($studentIds !== null) $group->students()->sync($studentIds);
+        });
+        return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]);
+    }
+
+    public function destroyGroup(Group $group)
+    {
+        $group->delete();
+        return response()->json(['success'=>true,'message'=>'تم حذف المجموعة']);
+    }
+
+    public function addStudentToGroup(Request $request, Group $group)
+    {
+        $data = $request->validate(['student_id'=>'required|integer|exists:students,id']);
+        $group->students()->syncWithoutDetaching([$data['student_id']]);
+        return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]);
+    }
+
+    public function removeStudentFromGroup(Group $group, Student $student)
+    {
+        $group->students()->detach($student->id);
+        return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]);
+    }
 
     public function schedules(Request $request)
     {
