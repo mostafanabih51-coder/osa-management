@@ -14,7 +14,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
   @override void initState() { super.initState(); load(); }
   Future<void> load() async {
     try { final r = await ApiService.get('teachers'); if (mounted) setState(() { teachers = List<dynamic>.from(r['data'] ?? r); loading = false; }); }
-    catch (_) { if (mounted) setState(() => loading = false); }
+    catch (e) { if (mounted) { setState(() => loading = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); } }
   }
 
   Future<void> add() async {
@@ -33,7 +33,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
     ));
     if (ok != true) return;
     try { await ApiService.post('teachers', {'name': name.text.trim(), 'phone': phone.text.trim(), 'email': email.text.trim(), 'specialization': spec.text.trim(), 'hourly_rate': double.tryParse(rate.text) ?? 0, 'active': true}); await load(); }
-    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
+    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
   }
 
   Future<void> details(dynamic id) async {
@@ -41,13 +41,29 @@ class _TeachersScreenState extends State<TeachersScreen> {
       final r = await ApiService.get('teachers/$id');
       if (!mounted) return;
       final d = Map<String, dynamic>.from(r['data'] ?? r);
-      showDialog(context: context, builder: (c) => AlertDialog(title: Text('${d['name'] ?? 'المدرس'}'), content: Text('الطلاب: ${d['students_count'] ?? (d['students'] is List ? d['students'].length : 0)}\nالمجموعات: ${d['groups_count'] ?? 0}\nالمستحق: ${d['due'] ?? 0}\nالمدفوع: ${d['paid'] ?? 0}\nالمتبقي: ${d['remaining'] ?? 0}'), actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('إغلاق'))]));
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()))); }
+      final students = d['students'] is List ? List<dynamic>.from(d['students']) : <dynamic>[];
+      final groups = d['groups'] is List ? List<dynamic>.from(d['groups']) : <dynamic>[];
+      showDialog(context: context, builder: (c) => AlertDialog(
+        title: Text('${d['teacher'] is Map ? d['teacher']['name'] : d['name'] ?? 'المدرس'}'),
+        content: SizedBox(width: 420, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('عدد الطلاب: ${students.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          if (students.isNotEmpty) ...students.map((s) => ListTile(dense: true, leading: const Icon(Icons.person), title: Text('${s['name'] ?? 'طالب'}'))),
+          const Divider(),
+          Text('عدد المجموعات: ${groups.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
+          if (groups.isNotEmpty) ...groups.map((g) => ListTile(dense: true, leading: const Icon(Icons.groups), title: Text('${g['name'] ?? 'مجموعة'}'))),
+          const Divider(),
+          Text('إجمالي المستحق: ${d['due'] ?? 0}'),
+          Text('إجمالي المدفوع: ${d['paid'] ?? 0}'),
+          Text('المتبقي: ${d['remaining'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        ]))),
+        actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('إغلاق'))],
+      ));
+    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
   }
 
   @override Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('المدرسون')),
+      appBar: AppBar(title: const Text('المدرسون'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
       floatingActionButton: FloatingActionButton(onPressed: add, child: const Icon(Icons.add)),
       body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(
         onRefresh: load,
