@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\ApiController;
 use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LessonController;
+use App\Http\Controllers\UserController;
 
 Route::get('/health', fn () => ['status' => 'ok', 'service' => 'osa-api', 'version' => '1.3']);
 Route::post('/login', [ApiController::class, 'login']);
@@ -13,6 +14,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [ApiController::class, 'logout']);
 
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
+
+    Route::middleware('admin')->group(function () {
+        Route::get('/users', [UserController::class, 'index']);
+        Route::put('/users/{user}/permissions', [UserController::class, 'updatePermissions']);
+    });
 
     Route::middleware('permission:view_students')->group(function () {
         Route::get('/students', [ApiController::class, 'index']);
