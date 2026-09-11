@@ -12,6 +12,7 @@ import '../subscriptions/subscriptions_screen.dart';
 import '../lessons/lessons_screen.dart';
 import '../supervisors/supervisors_screen.dart';
 import '../finance/finance_screen.dart';
+import '../users/users_screen.dart';
 import '../auth/login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -23,15 +24,23 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Map<String, dynamic>? data;
   bool loading = true;
   String? error;
+  String? role;
 
   @override
   void initState() { super.initState(); loadDashboard(); }
 
   Future<void> loadDashboard() async {
     try {
-      final r = await ApiService.get('dashboard');
+      final results = await Future.wait([ApiService.get('dashboard'), ApiService.get('user')]);
       if (!mounted) return;
-      setState(() { data = r; loading = false; error = null; });
+      final user = results[1];
+      final u = user['user'] is Map ? Map<String, dynamic>.from(user['user']) : user;
+      setState(() {
+        data = results[0];
+        role = '${u['role'] ?? ''}';
+        loading = false;
+        error = null;
+      });
     } catch (e) {
       if (!mounted) return;
       setState(() { error = e.toString().replaceFirst('Exception: ', ''); loading = false; });
@@ -63,6 +72,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     )),
   );
 
+  bool get canManageUsers => ['admin', 'super_admin', 'owner'].contains(role);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -85,6 +96,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         item(Icons.fact_check, 'الحضور', const AttendanceScreen()), item(Icons.event_available, 'الاشتراكات', const SubscriptionsScreen()),
         const Divider(), item(Icons.payments, 'المدفوعات', const PaymentsScreen()), item(Icons.money_off, 'المصروفات', const ExpensesScreen()),
         item(Icons.account_balance_wallet, 'المالية والمستحقات', const FinanceScreen()), item(Icons.bar_chart, 'التقارير المالية', const ReportsScreen()),
+        if (canManageUsers) item(Icons.admin_panel_settings, 'المستخدمون والصلاحيات', const UsersScreen()),
       ])),
       body: loading
           ? const Center(child: CircularProgressIndicator())
