@@ -1,95 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class AttendanceScreen extends StatefulWidget {
-  const AttendanceScreen({super.key});
-
-  @override
-  State<AttendanceScreen> createState() => _AttendanceScreenState();
-}
-
-class _AttendanceScreenState extends State<AttendanceScreen> {
-  List attendance = [];
-  bool loading = true;
-  String? error;
-
-  @override
-  void initState() {
-    super.initState();
-    loadAttendance();
-  }
-
-  Future<void> loadAttendance() async {
-    try {
-      final result = await ApiService.get('attendance');
-      if (!mounted) return;
-      setState(() {
-        attendance = result['data'] ?? result['attendance'] ?? [];
-        loading = false;
-        error = null;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        loading = false;
-        error = e.toString().replaceFirst('Exception: ', '');
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('الحضور')),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : error != null
-              ? Center(child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Column(mainAxisSize: MainAxisSize.min, children: [
-                    Text(error!, textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    FilledButton(onPressed: loadAttendance, child: const Text('إعادة المحاولة')),
-                  ]),
-                ))
-              : attendance.isEmpty
-                  ? RefreshIndicator(
-                      onRefresh: loadAttendance,
-                      child: ListView(children: const [
-                        SizedBox(height: 220),
-                        Center(child: Text('لا توجد سجلات حضور حاليًا', style: TextStyle(fontSize: 18))),
-                      ]),
-                    )
-                  : RefreshIndicator(
-                      onRefresh: loadAttendance,
-                      child: ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: attendance.length,
-                        itemBuilder: (_, index) {
-                          final item = attendance[index] as Map<String, dynamic>;
-                          final status = '${item['status'] ?? ''}';
-                          final present = status == 'present';
-                          final late = status == 'late';
-                          final excused = status == 'excused';
-                          final student = item['student'];
-                          final studentName = student is Map ? '${student['name'] ?? 'طالب'}' : 'طالب';
-                          final label = present ? 'حاضر' : late ? 'متأخر' : excused ? 'معتذر' : 'غائب';
-                          return Card(
-                            margin: const EdgeInsets.only(bottom: 10),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: present ? Colors.green : AppColors.red,
-                                child: Icon(present ? Icons.check : Icons.close, color: Colors.white),
-                              ),
-                              title: Text(studentName, style: const TextStyle(fontWeight: FontWeight.bold)),
-                              subtitle: Text('${item['date'] ?? ''}'),
-                              trailing: Text(label, style: TextStyle(color: present ? Colors.green : AppColors.red, fontWeight: FontWeight.bold)),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-    );
-  }
+class AttendanceScreen extends StatefulWidget { const AttendanceScreen({super.key}); @override State<AttendanceScreen> createState()=>_AttendanceScreenState(); }
+class _AttendanceScreenState extends State<AttendanceScreen>{
+ List attendance=[],students=[],teachers=[]; bool loading=true; String? error;
+ @override void initState(){super.initState();load();}
+ Future<void> load() async {try{final r=await Future.wait([ApiService.get('attendance'),ApiService.get('students'),ApiService.get('teachers')]);if(!mounted)return;setState((){attendance=r[0]['data']??[];students=r[1]['data']??[];teachers=r[2]['data']??[];loading=false;error=null;});}catch(e){if(mounted)setState((){loading=false;error=e.toString().replaceFirst('Exception: ','');});}}
+ Future<void> add() async {if(students.isEmpty){_msg('أضف طالبًا أولًا');return;}int studentId=students.first['id'];int? teacherId=teachers.isEmpty?null:teachers.first['id'];String status='present';final date=TextEditingController(text:DateTime.now().toIso8601String().substring(0,10));final notes=TextEditingController();final key=GlobalKey<FormState>();final ok=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,setD)=>AlertDialog(title:const Text('تسجيل حضور'),content:SingleChildScrollView(child:Form(key:key,child:Column(mainAxisSize:MainAxisSize.min,children:[DropdownButtonFormField<int>(value:studentId,items:students.map((x)=>DropdownMenuItem<int>(value:x['id'],child:Text('${x['name']??''}'))).toList(),onChanged:(v){if(v!=null)setD(()=>studentId=v);},decoration:const InputDecoration(labelText:'الطالب')),if(teachers.isNotEmpty)DropdownButtonFormField<int>(value:teacherId,items:teachers.map((x)=>DropdownMenuItem<int>(value:x['id'],child:Text('${x['name']??''}'))).toList(),onChanged:(v)=>setD(()=>teacherId=v),decoration:const InputDecoration(labelText:'المدرس')),DropdownButtonFormField<String>(value:status,items:const [DropdownMenuItem(value:'present',child:Text('حاضر')),DropdownMenuItem(value:'absent',child:Text('غائب')),DropdownMenuItem(value:'late',child:Text('متأخر')),DropdownMenuItem(value:'excused',child:Text('معتذر'))],onChanged:(v){if(v!=null)setD(()=>status=v);},decoration:const InputDecoration(labelText:'الحالة')),TextFormField(controller:date,decoration:const InputDecoration(labelText:'التاريخ YYYY-MM-DD')),TextFormField(controller:notes,decoration:const InputDecoration(labelText:'ملاحظات'))]))),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(key.currentState!.validate())Navigator.pop(c,true);},child:const Text('حفظ'))]));if(ok!=true)return;try{await ApiService.post('attendance',{'student_id':studentId,'teacher_id':teacherId,'date':date.text.trim(),'status':status,'notes':notes.text.trim()});await load();_msg('تم تسجيل الحضور');}catch(e){_msg(e.toString().replaceFirst('Exception: ',''));}}
+ void _msg(String x){if(mounted)ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(x)));}
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('الحضور'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton(onPressed:add,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):error!=null?Center(child:Text(error!)):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:attendance.length,itemBuilder:(_,i){final x=attendance[i];final s=x['student'];final st='${x['status']??''}';final label=st=='present'?'حاضر':st=='late'?'متأخر':st=='excused'?'معتذر':'غائب';return Card(child:ListTile(leading:CircleAvatar(child:Icon(st=='present'?Icons.check:Icons.close)),title:Text(s is Map?'${s['name']??'طالب'}':'طالب'),subtitle:Text('${x['date']??''}'),trailing:Text(label));}));
 }
