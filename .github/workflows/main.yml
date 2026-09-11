@@ -2,19 +2,15 @@ name: Build Android APK
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     defaults:
       run:
         working-directory: mobile
-
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -39,7 +35,7 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("android/app/src/main/AndroidManifest.xml")
+          p = Path('android/app/src/main/AndroidManifest.xml')
           text = p.read_text()
           permission = '<uses-permission android:name="android.permission.INTERNET"/>'
           if permission not in text:
@@ -54,29 +50,15 @@ jobs:
           KEYSTORE_ALIAS: ${{ secrets.KEYSTORE_ALIAS }}
         run: |
           set -euo pipefail
-          if [ -n "${KEYSTORE_BASE64:-}" ] && printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/osa-release-key.jks 2>/dev/null && keytool -list -keystore android/osa-release-key.jks -storepass "${KEYSTORE_PASSWORD:-}" >/dev/null 2>&1; then
-            echo "Using repository release keystore."
-            STORE_PASSWORD="$KEYSTORE_PASSWORD"
-            KEY_ALIAS="$KEYSTORE_ALIAS"
-          else
-            echo "Repository keystore secret is missing or invalid; generating a CI signing key for this build."
-            rm -f android/osa-release-key.jks
-            keytool -genkeypair -v \
-              -keystore android/osa-release-key.jks \
-              -storepass OSA_CI_RELEASE_2026 \
-              -keypass OSA_CI_RELEASE_2026 \
-              -alias osa-release \
-              -keyalg RSA \
-              -keysize 2048 \
-              -validity 10000 \
-              -dname "CN=Online School Academy, OU=OSA, O=C, L=Cairo, ST=Cairo, C=EG"
-            STORE_PASSWORD="OSA_CI_RELEASE_2026"
-            KEY_ALIAS="osa-release"
-          fi
+          test -n "${KEYSTORE_BASE64:-}" || { echo 'Missing KEYSTORE_BASE64 repository secret.'; exit 1; }
+          test -n "${KEYSTORE_PASSWORD:-}" || { echo 'Missing KEYSTORE_PASSWORD repository secret.'; exit 1; }
+          test -n "${KEYSTORE_ALIAS:-}" || { echo 'Missing KEYSTORE_ALIAS repository secret.'; exit 1; }
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > android/app/osa-release-key.jks
+          keytool -list -keystore android/app/osa-release-key.jks -storepass "$KEYSTORE_PASSWORD" >/dev/null
           cat > android/key.properties <<EOF
-          storePassword=$STORE_PASSWORD
-          keyPassword=$STORE_PASSWORD
-          keyAlias=$KEY_ALIAS
+          storePassword=$KEYSTORE_PASSWORD
+          keyPassword=$KEYSTORE_PASSWORD
+          keyAlias=$KEYSTORE_ALIAS
           storeFile=osa-release-key.jks
           EOF
 
@@ -84,17 +66,17 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p = Path("android/app/build.gradle.kts")
+          p = Path('android/app/build.gradle.kts')
           text = p.read_text()
           imports = 'import java.util.Properties\nimport java.io.FileInputStream\n'
           if 'import java.util.Properties' not in text:
               text = imports + text
-          load_block = '''\nval keystoreProperties = Properties()\nval keystorePropertiesFile = rootProject.file("key.properties")\nif (keystorePropertiesFile.exists()) {\n    keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n}\n\n'''
+          load = '''\nval keystoreProperties = Properties()\nval keystorePropertiesFile = rootProject.file("key.properties")\nif (keystorePropertiesFile.exists()) {\n    keystoreProperties.load(FileInputStream(keystorePropertiesFile))\n}\n\n'''
           if 'val keystoreProperties = Properties()' not in text:
-              text = text.replace('plugins {', load_block + 'plugins {', 1)
-          signing_block = '''    signingConfigs {\n        create("release") {\n            keyAlias = keystoreProperties.getProperty("keyAlias")\n            keyPassword = keystoreProperties.getProperty("keyPassword")\n            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }\n            storePassword = keystoreProperties.getProperty("storePassword")\n        }\n    }\n\n'''
+              text = text.replace('plugins {', load + 'plugins {', 1)
+          signing = '''    signingConfigs {\n        create("release") {\n            keyAlias = keystoreProperties.getProperty("keyAlias")\n            keyPassword = keystoreProperties.getProperty("keyPassword")\n            storeFile = keystoreProperties.getProperty("storeFile")?.let { file(it) }\n            storePassword = keystoreProperties.getProperty("storePassword")\n        }\n    }\n\n'''
           if 'create("release")' not in text:
-              text = text.replace('    buildTypes {', signing_block + '    buildTypes {', 1)
+              text = text.replace('    buildTypes {', signing + '    buildTypes {', 1)
           text = text.replace('signingConfig = signingConfigs.getByName("debug")', 'signingConfig = signingConfigs.getByName("release")')
           p.write_text(text)
           PY
