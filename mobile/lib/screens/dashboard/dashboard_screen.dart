@@ -6,7 +6,8 @@ import '../teachers/teachers_screen.dart';
 import '../payments/payments_screen.dart';
 import '../expenses/expenses_screen.dart';
 import '../reports/reports_screen.dart';
-import '../common/module_placeholder_screen.dart';
+import '../schedules/schedules_screen.dart';
+import '../attendance/attendance_screen.dart';
 import '../auth/login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -63,13 +64,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  void openModule(String title, IconData icon) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => ModulePlaceholderScreen(title: title, icon: icon),
-      ),
-    );
+  void open(Widget screen) {
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => screen));
   }
 
   @override
@@ -107,14 +103,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
             ListTile(leading: const Icon(Icons.dashboard), title: const Text('لوحة التحكم'), onTap: () => Navigator.pop(context)),
-            ListTile(leading: const Icon(Icons.people), title: const Text('الطلاب'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentsScreen())); }),
-            ListTile(leading: const Icon(Icons.school), title: const Text('المدرسون'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersScreen())); }),
-            ListTile(leading: const Icon(Icons.calendar_month), title: const Text('الجداول والحصص'), onTap: () { Navigator.pop(context); openModule('الجداول والحصص', Icons.calendar_month); }),
-            ListTile(leading: const Icon(Icons.fact_check), title: const Text('الحضور'), onTap: () { Navigator.pop(context); openModule('الحضور', Icons.fact_check); }),
+            ListTile(leading: const Icon(Icons.people), title: const Text('الطلاب'), onTap: () { Navigator.pop(context); open(const StudentsScreen()); }),
+            ListTile(leading: const Icon(Icons.school), title: const Text('المدرسون'), onTap: () { Navigator.pop(context); open(const TeachersScreen()); }),
+            ListTile(leading: const Icon(Icons.calendar_month), title: const Text('الجداول والحصص'), onTap: () { Navigator.pop(context); open(const SchedulesScreen()); }),
+            ListTile(leading: const Icon(Icons.fact_check), title: const Text('الحضور'), onTap: () { Navigator.pop(context); open(const AttendanceScreen()); }),
             const Divider(),
-            ListTile(leading: const Icon(Icons.payments), title: const Text('المدفوعات'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen())); }),
-            ListTile(leading: const Icon(Icons.money_off), title: const Text('المصروفات'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ExpensesScreen())); }),
-            ListTile(leading: const Icon(Icons.bar_chart), title: const Text('التقارير'), onTap: () { Navigator.pop(context); Navigator.push(context, MaterialPageRoute(builder: (_) => const ReportsScreen())); }),
+            ListTile(leading: const Icon(Icons.payments), title: const Text('المدفوعات'), onTap: () { Navigator.pop(context); open(const PaymentsScreen()); }),
+            ListTile(leading: const Icon(Icons.money_off), title: const Text('المصروفات'), onTap: () { Navigator.pop(context); open(const ExpensesScreen()); }),
+            ListTile(leading: const Icon(Icons.bar_chart), title: const Text('التقارير'), onTap: () { Navigator.pop(context); open(const ReportsScreen()); }),
           ],
         ),
       ),
@@ -141,12 +137,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     crossAxisSpacing: 12,
                     mainAxisSpacing: 12,
                     children: [
-                      _card('الطلاب', data?['students'], Icons.people, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const StudentsScreen()))),
-                      _card('المدرسون', data?['teachers'], Icons.school, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeachersScreen()))),
-                      _card('حصص اليوم', data?['today_classes'], Icons.calendar_today),
-                      _card('حضور اليوم', data?['today_attendance'], Icons.fact_check),
-                      _card('دخل الشهر', data?['monthly_income'], Icons.account_balance_wallet),
-                      _card('مصروفات الشهر', data?['monthly_expenses'], Icons.money_off),
+                      _card('الطلاب', data?['students'], Icons.people, () => open(const StudentsScreen())),
+                      _card('المدرسون', data?['teachers'], Icons.school, () => open(const TeachersScreen())),
+                      _card('حصص اليوم', data?['today_classes'], Icons.calendar_today, () => open(const SchedulesScreen())),
+                      _card('حضور اليوم', data?['today_attendance'], Icons.fact_check, () => open(const AttendanceScreen())),
+                      _card('دخل الشهر', data?['monthly_income'], Icons.account_balance_wallet, () => open(const PaymentsScreen())),
+                      _card('مصروفات الشهر', data?['monthly_expenses'], Icons.money_off, () => open(const ExpensesScreen())),
                       _card('تجديد خلال 7 أيام', data?['expiring_7_days'], Icons.warning_amber),
                     ],
                   ),
