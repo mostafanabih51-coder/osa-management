@@ -55,7 +55,13 @@ jobs:
           channel: stable
           cache: true
 
-      - name: Verify committed Android project
+      - name: Generate missing Android project
+        run: |
+          if [ ! -f android/app/build.gradle.kts ] || [ ! -f android/app/src/main/AndroidManifest.xml ]; then
+            flutter create --platforms=android .
+          fi
+
+      - name: Verify Android project
         run: |
           test -f android/app/build.gradle.kts
           test -f android/app/src/main/AndroidManifest.xml
