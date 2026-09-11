@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\{Attendance, Expense, Payment, Schedule, Student, Subscription, Teacher, TeacherDue, TeacherLessonDue, SupervisorDue, User};
+use App\Models\{Attendance, Expense, Payment, Schedule, Student, Subscription, Teacher, TeacherDue, TeacherLessonDue, Supervisor, SupervisorDue, User};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\DB;
@@ -18,16 +18,11 @@ class ApiController extends Controller
         return response()->json(['token' => $user->createToken('management')->plainTextToken, 'user' => $user]);
     }
 
-    public function logout(Request $request)
-    {
-        $request->user()->currentAccessToken()?->delete();
-        return ['message' => 'تم تسجيل الخروج'];
-    }
+    public function logout(Request $request) { $request->user()->currentAccessToken()?->delete(); return ['message' => 'تم تسجيل الخروج']; }
 
     public function dashboard(Request $request)
     {
-        $user = $request->user();
-        $admin = in_array($user->role, ['admin', 'super_admin', 'owner'], true);
+        $admin = in_array($request->user()->role, ['admin', 'super_admin', 'owner'], true);
         $data = [
             'academy_name' => 'Online School Academy',
             'students' => Student::count(),
@@ -52,6 +47,31 @@ class ApiController extends Controller
 
     public function teachers() { return Teacher::withCount(['schedules'])->latest()->paginate(25); }
     public function storeTeacher(Request $request) { return Teacher::create($request->validate(['name'=>'required','phone'=>'nullable','email'=>'nullable|email','specialization'=>'nullable','hourly_rate'=>'nullable|numeric|min:0','status'=>'nullable'])); }
+
+    public function teacherDetails(Teacher $teacher)
+    {
+        $teacher->load([
+            'lessons.student',
+            'lessons.group',
+            'lessons.supervisor',
+            'lessonDues.lesson',
+        ]);
+        $dues = $teacher->lessonDues;
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'teacher' => $teacher,
+                'students' => Student::whereHas('lessons', fn($q) => $q->where('teacher_id', $teacher->id))->distinct()->get(),
+                'groups' => $teacher->lessons->pluck('group')->filter()->unique('id')->values(),
+                'due' => $dues->sum('amount'),
+                'paid' => $dues->sum('paid_amount'),
+                'remaining' => max(0, $dues->sum('amount') - $dues->sum('paid_amount')),
+            ],
+        ]);
+    }
+
+    public function supervisors() { return Supervisor::withCount(['lessons'])->latest()->paginate(50); }
+    public function storeSupervisor(Request $request) { return Supervisor::create($request->validate(['name'=>'required','phone'=>'nullable','email'=>'nullable|email','status'=>'nullable','user_id'=>'nullable|exists:users,id'])); }
 
     public function schedules(Request $request)
     {
@@ -99,12 +119,7 @@ class ApiController extends Controller
         if ($request->filled('to')) $query->whereDate('paid_on','<=',$request->date('to'));
         return $query->paginate(50);
     }
-    public function storePayment(Request $request)
-    {
-        return DB::transaction(function() use ($request) {
-            return Payment::create($request->validate(['student_id'=>'required|exists:students,id','subscription_id'=>'nullable|exists:subscriptions,id','amount'=>'required|numeric|min:0.01','paid_on'=>'required|date','method'=>'nullable','collector'=>'nullable','reference'=>'nullable','notes'=>'nullable']));
-        });
-    }
+    public function storePayment(Request $request) { return DB::transaction(fn() => Payment::create($request->validate(['student_id'=>'required|exists:students,id','subscription_id'=>'nullable|exists:subscriptions,id','amount'=>'required|numeric|min:0.01','paid_on'=>'required|date','method'=>'nullable','collector'=>'nullable','reference'=>'nullable','notes'=>'nullable']))); }
 
     public function expenses(Request $request)
     {
@@ -113,25 +128,26 @@ class ApiController extends Controller
         if ($request->filled('to')) $query->whereDate('spent_on','<=',$request->date('to'));
         return $query->paginate(50);
     }
-    public function storeExpense(Request $request)
-    {
-        $data = $request->validate(['category'=>'required','amount'=>'required|numeric|min:0.01','spent_on'=>'required|date','description'=>'nullable']);
-        $data['created_by'] = $request->user()->id;
-        return Expense::create($data);
-    }
+    public function storeExpense(Request $request) { $data=$request->validate(['category'=>'required','amount'=>'required|numeric|min:0.01','spent_on'=>'required|date','description'=>'nullable']); $data['created_by']=$request->user()->id; return Expense::create($data); }
 
     public function teacherDues(Request $request) { return TeacherDue::with('teacher')->latest()->paginate(50); }
 
     public function financialReport(Request $request)
     {
-        $from = $request->date('from')?->startOfDay() ?? now()->startOfYear()->startOfDay();
-        $to = $request->date('to')?->endOfDay() ?? now()->endOfMonth()->endOfDay();
+        if ($request->filled('month')) {
+            $month = $request->string('month');
+            $from = now()->setDate((int)substr($month,0,4),(int)substr($month,5,2),1)->startOfDay();
+            $to = $from->copy()->endOfMonth()->endOfDay();
+        } else {
+            $from = $request->date('from')?->startOfDay() ?? now()->startOfYear()->startOfDay();
+            $to = $request->date('to')?->endOfDay() ?? now()->endOfMonth()->endOfDay();
+        }
         $income = Payment::whereBetween('paid_on',[$from,$to])->sum('amount');
         $expenses = Expense::whereBetween('spent_on',[$from->toDateString(),$to->toDateString()])->sum('amount');
         $teacherDue = TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
         $teacherPaid = TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
         $supervisorDue = SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
         $supervisorPaid = SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
-        return ['from'=>$from->toDateString(),'to'=>$to->toDateString(),'income'=>$income,'expenses'=>$expenses,'teacher_dues'=>$teacherDue,'teacher_paid'=>$teacherPaid,'supervisor_dues'=>$supervisorDue,'supervisor_paid'=>$supervisorPaid,'net_operation'=>$income-$expenses];
+        return ['from'=>$from->toDateString(),'to'=>$to->toDateString(),'month'=>$from->format('Y-m'),'income'=>$income,'expenses'=>$expenses,'teacher_dues'=>$teacherDue,'teacher_paid'=>$teacherPaid,'supervisor_dues'=>$supervisorDue,'supervisor_paid'=>$supervisorPaid,'net_operation'=>$income-$expenses];
     }
 }
