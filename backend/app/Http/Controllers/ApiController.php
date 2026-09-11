@@ -41,7 +41,10 @@ class ApiController extends Controller
             'students' => Student::count(),
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
-            'today_classes' => Schedule::whereDate('starts_at', now())->count(),
+            'today_classes' => Schedule::whereDate('starts_at', now())
+                ->where(function ($query) {
+                    $query->whereNull('status')->orWhere('status', '!=', 'cancelled');
+                })->count(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'monthly_income' => Payment::whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
             'monthly_expenses' => Expense::whereBetween('spent_on', [now()->startOfMonth(), now()->endOfMonth()])->sum('amount'),
@@ -132,6 +135,9 @@ class ApiController extends Controller
         ]);
 
         $conflict = Schedule::where('teacher_id', $data['teacher_id'])
+            ->where(function ($query) {
+                $query->whereNull('status')->orWhere('status', '!=', 'cancelled');
+            })
             ->where('starts_at', '<', $data['ends_at'])
             ->where('ends_at', '>', $data['starts_at'])
             ->exists();
