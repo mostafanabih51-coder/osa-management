@@ -102,6 +102,15 @@ class ApiService {
     return _handle(r, 'تعذر تحديث البيانات');
   }
 
+  static Future<Map<String, dynamic>> delete(String endpoint) async {
+    _requireToken();
+    final r = await http.delete(
+      Uri.parse('$apiBaseUrl/$endpoint'),
+      headers: _authHeaders(),
+    ).timeout(const Duration(seconds: 20));
+    return _handle(r, 'تعذر حذف البيانات');
+  }
+
   static void _requireToken() {
     if (token == null || token!.isEmpty) {
       onUnauthorized?.call();
