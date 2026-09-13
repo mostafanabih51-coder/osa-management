@@ -1,7 +1,170 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
-class SubscriptionsScreen extends StatefulWidget{const SubscriptionsScreen({super.key});@override State<SubscriptionsScreen> createState()=>_SubscriptionsScreenState();}
-class _SubscriptionsScreenState extends State<SubscriptionsScreen>{List subscriptions=[],students=[],subjects=[];bool loading=true;List<dynamic> list(dynamic x)=>x is List?List<dynamic>.from(x):x is Map&&x['data'] is List?List<dynamic>.from(x['data']):[];@override void initState(){super.initState();load();}void msg(Object e)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));
-Future<void> load()async{try{final r=await Future.wait([ApiService.get('subscriptions'),ApiService.get('students'),ApiService.get('subjects')]);if(mounted)setState((){subscriptions=list(r[0]);students=list(r[1]);subjects=list(r[2]);loading=false;});}catch(e){if(mounted){setState(()=>loading=false);msg(e);}}}
-Future<void> add()async{if(students.isEmpty||subjects.isEmpty){msg(Exception('أضف طالبًا ومواد أولًا'));return;}int studentId=students.first['id'];String subject='${subjects.first}',status='active';final amount=TextEditingController(),start=TextEditingController(text:DateTime.now().toIso8601String().substring(0,10)),end=TextEditingController(text:DateTime.now().add(const Duration(days:30)).toIso8601String().substring(0,10));final k=GlobalKey<FormState>();final ok=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,setD){return AlertDialog(title:const Text('إضافة اشتراك'),content:Form(key:k,child:Column(mainAxisSize:MainAxisSize.min,children:[DropdownButtonFormField<int>(value:studentId,decoration:const InputDecoration(labelText:'الطالب'),items:students.map((x)=>DropdownMenuItem<int>(value:x['id'] as int,child:Text('${x['name']}'))).toList(),onChanged:(v){if(v!=null)setD(()=>studentId=v);}),DropdownButtonFormField<String>(value:subject,decoration:const InputDecoration(labelText:'المادة'),items:subjects.map((x)=>DropdownMenuItem<String>(value:'$x',child:Text('$x'))).toList(),onChanged:(v){if(v!=null)setD(()=>subject=v);}),TextFormField(controller:amount,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'المبلغ'),validator:(v)=>double.tryParse(v??'')==null?'مبلغ غير صحيح':null),TextFormField(controller:start,decoration:const InputDecoration(labelText:'البداية YYYY-MM-DD')),TextFormField(controller:end,decoration:const InputDecoration(labelText:'النهاية YYYY-MM-DD')),DropdownButtonFormField<String>(value:status,decoration:const InputDecoration(labelText:'الحالة'),items:const[DropdownMenuItem(value:'active',child:Text('نشط')),DropdownMenuItem(value:'inactive',child:Text('غير نشط')),DropdownMenuItem(value:'expired',child:Text('منتهي'))],onChanged:(v){if(v!=null)setD(()=>status=v);})])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(k.currentState!.validate())Navigator.pop(c,true);},child:const Text('حفظ'))]);}));if(ok==true){try{await ApiService.post('subscriptions',{'student_id':studentId,'subject':subject,'amount':double.parse(amount.text),'starts_on':start.text.trim(),'ends_on':end.text.trim(),'status':status});await load();}catch(e){msg(e);}}amount.dispose();start.dispose();end.dispose();}
-@override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:const Text('الاشتراكات'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton(onPressed:add,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:subscriptions.length,itemBuilder:(_,i){final x=subscriptions[i],s=x['student'];final ps=list(x['payments']);return Card(child:ListTile(leading:const CircleAvatar(child:Icon(Icons.event_available)),title:Text('${s?['name']??'طالب'}'),subtitle:Text('${x['subject']??''} • ${x['amount']??0}\n${x['starts_on']??''} → ${x['ends_on']??''} • ${x['status']??''}\nمدفوعات: ${ps.length}'),isThreeLine:true));})));}}
+
+class SubscriptionsScreen extends StatefulWidget {
+  const SubscriptionsScreen({super.key});
+  @override
+  State<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
+}
+
+class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
+  List<dynamic> subscriptions = [];
+  List<dynamic> students = [];
+  List<String> subjects = [];
+  bool loading = true;
+
+  static const fallbackSubjects = <String>[
+    'العربية', 'اللغة الإنجليزية', 'الرياضيات', 'العلوم', 'الدراسات الاجتماعية',
+    'Math', 'Science', 'English', 'Arabic', 'German', 'French', 'Spanish', 'Quran'
+  ];
+
+  List<dynamic> list(dynamic value) {
+    if (value is List) return List<dynamic>.from(value);
+    if (value is Map && value['data'] is List) return List<dynamic>.from(value['data']);
+    return [];
+  }
+
+  int id(dynamic value) => int.tryParse('${value['id']}') ?? 0;
+  String subjectName(dynamic value) => value is Map ? '${value['subject'] ?? value['name'] ?? ''}' : '$value';
+
+  void msg(Object error) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Exception: ', ''))));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final result = await Future.wait([
+        ApiService.get('subscriptions'),
+        ApiService.get('students'),
+        ApiService.get('subjects'),
+      ]);
+      final loadedSubjects = list(result[2]).map(subjectName).where((x) => x.trim().isNotEmpty).toSet().toList();
+      if (!mounted) return;
+      setState(() {
+        subscriptions = list(result[0]);
+        students = list(result[1]);
+        subjects = loadedSubjects.isEmpty ? fallbackSubjects : loadedSubjects;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      msg(e);
+    }
+  }
+
+  Future<void> add() async {
+    if (students.isEmpty) {
+      msg(Exception('أضف طالبًا أولًا.'));
+      return;
+    }
+    int studentId = id(students.first);
+    String subject = subjects.first;
+    String status = 'active';
+    final amount = TextEditingController();
+    final start = TextEditingController(text: DateTime.now().toIso8601String().substring(0, 10));
+    final end = TextEditingController(text: DateTime.now().add(const Duration(days: 30)).toIso8601String().substring(0, 10));
+    final form = GlobalKey<FormState>();
+
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('إضافة اشتراك'),
+          content: Form(
+            key: form,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<int>(
+                  value: studentId,
+                  decoration: const InputDecoration(labelText: 'الطالب *'),
+                  items: students.map((student) => DropdownMenuItem<int>(value: id(student), child: Text('${student['name']}'))).toList(),
+                  onChanged: (value) { if (value != null) setDialogState(() => studentId = value); },
+                ),
+                DropdownButtonFormField<String>(
+                  value: subject,
+                  decoration: const InputDecoration(labelText: 'المادة *'),
+                  items: subjects.map((value) => DropdownMenuItem<String>(value: value, child: Text(value))).toList(),
+                  onChanged: (value) { if (value != null) setDialogState(() => subject = value); },
+                ),
+                TextFormField(controller: amount, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'المبلغ *'), validator: (v) => double.tryParse(v ?? '') == null ? 'مبلغ غير صحيح' : null),
+                TextFormField(controller: start, decoration: const InputDecoration(labelText: 'البداية YYYY-MM-DD'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
+                TextFormField(controller: end, decoration: const InputDecoration(labelText: 'النهاية YYYY-MM-DD'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
+                DropdownButtonFormField<String>(
+                  value: status,
+                  decoration: const InputDecoration(labelText: 'الحالة'),
+                  items: const [
+                    DropdownMenuItem(value: 'active', child: Text('نشط')),
+                    DropdownMenuItem(value: 'inactive', child: Text('غير نشط')),
+                    DropdownMenuItem(value: 'expired', child: Text('منتهي')),
+                  ],
+                  onChanged: (value) { if (value != null) setDialogState(() => status = value); },
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+            FilledButton(onPressed: () { if (form.currentState!.validate()) Navigator.pop(dialogContext, true); }, child: const Text('حفظ الاشتراك')),
+          ],
+        ),
+      ),
+    );
+
+    if (saved == true) {
+      try {
+        await ApiService.post('subscriptions', {
+          'student_id': studentId,
+          'subject': subject,
+          'amount': double.parse(amount.text),
+          'starts_on': start.text.trim(),
+          'ends_on': end.text.trim(),
+          'status': status,
+        });
+        await load();
+      } catch (e) {
+        msg(e);
+      }
+    }
+    amount.dispose();
+    start.dispose();
+    end.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('الاشتراكات'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
+      floatingActionButton: FloatingActionButton.extended(onPressed: add, icon: const Icon(Icons.add), label: const Text('إضافة اشتراك')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+                itemCount: subscriptions.length,
+                itemBuilder: (_, index) {
+                  final subscription = subscriptions[index];
+                  final student = subscription['student'];
+                  final payments = list(subscription['payments']);
+                  return Card(
+                    child: ListTile(
+                      leading: const CircleAvatar(child: Icon(Icons.event_available)),
+                      title: Text('${student?['name'] ?? 'طالب'}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      subtitle: Text('${subscription['subject'] ?? ''} • ${subscription['amount'] ?? 0}\n${subscription['starts_on'] ?? ''} → ${subscription['ends_on'] ?? ''} • ${subscription['status'] ?? ''}\nمدفوعات مرتبطة: ${payments.length}'),
+                      isThreeLine: true,
+                    ),
+                  );
+                },
+              ),
+            ),
+    );
+  }
+}
