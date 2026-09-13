@@ -1,12 +1,390 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
-class LessonsScreen extends StatefulWidget{const LessonsScreen({super.key});@override State<LessonsScreen> createState()=>_LessonsScreenState();}
-class _LessonsScreenState extends State<LessonsScreen>{
- List lessons=[],teachers=[],students=[],supervisors=[],groups=[];List<String> subjects=[];bool loading=true;static const fallback=['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
- List<dynamic> list(dynamic x)=>x is List?List<dynamic>.from(x):(x is Map&&x['data'] is List?List<dynamic>.from(x['data']):[]);int id(dynamic x)=>int.tryParse('${x['id']}')??0;String sub(dynamic x)=>x is Map?'${x['subject']??x['name']??''}':'$x';void msg(Object e)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));@override void initState(){super.initState();load();}
- Future<void> load()async{try{final r=await Future.wait([ApiService.get('lessons'),ApiService.get('teachers'),ApiService.get('students'),ApiService.get('supervisors'),ApiService.get('groups'),ApiService.get('subjects')]);final ss=list(r[5]).map(sub).where((x)=>x.isNotEmpty).toSet().toList();if(mounted)setState((){lessons=list(r[0]);teachers=list(r[1]);students=list(r[2]);supervisors=list(r[3]);groups=list(r[4]);subjects=ss.isEmpty?fallback:ss;loading=false;});}catch(e){if(mounted){setState(()=>loading=false);msg(e);}}}
- List<String> studentSubjects(dynamic s){final x=list(s['subjects']).map(sub).where((v)=>v.isNotEmpty).toSet().toList();return x.isEmpty?subjects:x;}List<dynamic> studentTeachers(dynamic s,String subject){final x=list(s['teachers']).where((t){final p=t is Map?t['pivot']:null;return p is Map&&p['subject']!=null?'${p['subject']}'==subject:true;}).toList();return x.isEmpty?teachers:x;}
- Future<void> form({String? initialType,dynamic item})async{if(teachers.isEmpty){msg(Exception('أضف مدرسًا أولًا.'));return;}String type='${item?['type']??initialType??'private'}';dynamic student=students.isEmpty?null:students.first;dynamic group=groups.isEmpty?null:groups.first;if(type=='private'&&student==null){msg(Exception('أضف طالبًا أولًا.'));return;}if(type=='group'&&group==null){msg(Exception('أنشئ مجموعة أولًا.'));return;}String subject='${item?['subject']??(type=='group'?'${group['subject']??subjects.first}':studentSubjects(student).first)}';int teacherId=id(item?['teacher']??(type=='group'?group['teacher']:studentTeachers(student,subject).first));int? supervisorId=int.tryParse('${item?['supervisor_id']??''}');final rate=TextEditingController(text:'${item?['teacher_rate']??(type=='group'?group['teacher_rate']??'':'')}'),starts=TextEditingController(text:'${item?['starts_at']??''}'),ends=TextEditingController(text:'${item?['ends_at']??''}');final key=GlobalKey<FormState>();final ok=await showDialog<bool>(context:context,builder:(dialog)=>StatefulBuilder(builder:(ctx,set){final ts=type=='group'?<dynamic>[group['teacher']??teachers.first]:studentTeachers(student,subject);final ss=type=='group'?<String>[subject]:studentSubjects(student);if(!ss.contains(subject))subject=ss.first;if(!ts.any((t)=>id(t)==teacherId))teacherId=id(ts.first);return AlertDialog(title:Text(item==null?(type=='group'?'إضافة حصة جروب':'إضافة حصة خاصة'):'تعديل الحصة'),content:SizedBox(width:520,child:SingleChildScrollView(child:Form(key:key,child:Column(children:[if(item==null)DropdownButtonFormField<String>(value:type,items:const[DropdownMenuItem(value:'private',child:Text('حصة خاصة')),DropdownMenuItem(value:'group',child:Text('حصة جروب'))],onChanged:(v){if(v==null)return;set((){type=v;if(type=='private'){student=students.first;subject=studentSubjects(student).first;teacherId=id(studentTeachers(student,subject).first);}else{group=groups.first;subject='${group['subject']??subjects.first}';teacherId=id(group['teacher']);rate.text='${group['teacher_rate']??''}';}});}),if(type=='private')DropdownButtonFormField<int>(value:id(student),items:students.map((s)=>DropdownMenuItem<int>(value:id(s),child:Text('${s['name']}'))).toList(),onChanged:(v){if(v!=null)set((){student=students.firstWhere((s)=>id(s)==v);subject=studentSubjects(student).first;teacherId=id(studentTeachers(student,subject).first);});}),if(type=='group')DropdownButtonFormField<int>(value:id(group),items:groups.map((g)=>DropdownMenuItem<int>(value:id(g),child:Text('${g['name']}'))).toList(),onChanged:(v){if(v!=null)set((){group=groups.firstWhere((g)=>id(g)==v);subject='${g['subject']??subjects.first}';teacherId=id(group['teacher']);rate.text='${group['teacher_rate']??''}';});}),DropdownButtonFormField<int>(value:teacherId,items:ts.map((t)=>DropdownMenuItem<int>(value:id(t),child:Text('${t['name']}'))).toList(),onChanged:type=='group'?null:(v){if(v!=null)set(()=>teacherId=v);}),DropdownButtonFormField<String>(value:subject,items:ss.map((s)=>DropdownMenuItem<String>(value:s,child:Text(s))).toList(),onChanged:type=='group'?null:(v){if(v!=null)set(()=>subject=v);}),if(supervisors.isNotEmpty)DropdownButtonFormField<int?>(value:supervisorId,items:[const DropdownMenuItem<int?>(value:null,child:Text('بدون مشرف')),...supervisors.map((s)=>DropdownMenuItem<int?>(value:id(s),child:Text('${s['name']}')))],onChanged:(v)=>set(()=>supervisorId=v)),TextFormField(controller:rate,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'سعر الحصة للمدرس *'),validator:(v)=>double.tryParse(v??'')==null?'أدخل سعرًا صحيحًا':null),TextFormField(controller:starts,decoration:const InputDecoration(labelText:'البداية YYYY-MM-DD HH:MM'),validator:(v)=>v==null||v.trim().isEmpty?'مطلوب':null),TextFormField(controller:ends,decoration:const InputDecoration(labelText:'النهاية YYYY-MM-DD HH:MM'),validator:(v)=>v==null||v.trim().isEmpty?'مطلوب':null)])))),actions:[TextButton(onPressed:()=>Navigator.pop(dialog,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(key.currentState!.validate())Navigator.pop(dialog,true);},child:const Text('حفظ'))]));}));if(ok==true){try{final b={'type':type,'teacher_id':teacherId,'supervisor_id':supervisorId,'group_id':type=='group'?id(group):null,'student_id':type=='private'?id(student):null,'subject':subject,'starts_at':starts.text.trim(),'ends_at':ends.text.trim(),'teacher_rate':double.parse(rate.text),'status':item?['status']??'scheduled'};if(item==null)await ApiService.post('lessons',b);else await ApiService.put('lessons/${id(item)}',b);await load();}catch(e){msg(e);}}for(final c in[rate,starts,ends])c.dispose();}
- Future<void> remove(dynamic item)async{final ok=await showDialog<bool>(context:context,builder:(d)=>AlertDialog(title:const Text('حذف الحصة'),content:const Text('هل تريد حذف هذه الحصة؟'),actions:[TextButton(onPressed:()=>Navigator.pop(d,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,true),child:const Text('حذف'))]));if(ok==true){try{await ApiService.delete('lessons/${id(item)}');await load();}catch(e){msg(e);}}}
- @override Widget build(BuildContext context){return Scaffold(appBar:AppBar(title:const Text('الدروس والحصص'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:ListView(padding:const EdgeInsets.all(16),children:[Row(children:[Expanded(child:FilledButton(onPressed:()=>form(initialType:'private'),child:const Text('حصة خاصة'))),const SizedBox(width:8),Expanded(child:FilledButton(onPressed:()=>form(initialType:'group'),child:const Text('حصة جروب')))]),const SizedBox(height:12),for(final l in lessons)Card(child:ListTile(title:Text('${l['subject']??''}'),subtitle:Text('${l['type']=='group'?'جروب':'خاصة'} • ${l['teacher']?['name']??''}\n${l['type']=='group'?'${l['group']?['name']??''}':'${l['student']?['name']??''}'}\n${l['starts_at']??''}'),isThreeLine:true,trailing:Row(mainAxisSize:MainAxisSize.min,children:[IconButton(onPressed:()=>form(item:l),icon:const Icon(Icons.edit)),IconButton(onPressed:()=>remove(l),icon:const Icon(Icons.delete))])))])));}
+
+class LessonsScreen extends StatefulWidget {
+  const LessonsScreen({super.key});
+
+  @override
+  State<LessonsScreen> createState() => _LessonsScreenState();
+}
+
+class _LessonsScreenState extends State<LessonsScreen> {
+  List lessons = [], teachers = [], students = [], supervisors = [], groups = [];
+  List<String> subjects = [];
+  bool loading = true;
+
+  static const fallback = [
+    'العربية', 'اللغة الإنجليزية', 'الرياضيات', 'العلوم', 'الدراسات الاجتماعية',
+    'Math', 'Science', 'English', 'Arabic', 'German', 'French', 'Spanish', 'Quran'
+  ];
+
+  List<dynamic> list(dynamic x) => x is List
+      ? List<dynamic>.from(x)
+      : (x is Map && x['data'] is List ? List<dynamic>.from(x['data']) : []);
+
+  int id(dynamic x) => int.tryParse('${x?['id']}') ?? 0;
+
+  String text(dynamic x, String key, [String fallbackValue = '']) {
+    if (x is Map) return '${x[key] ?? fallbackValue}';
+    return fallbackValue;
+  }
+
+  String sub(dynamic x) => x is Map ? '${x['subject'] ?? x['name'] ?? ''}' : '$x';
+
+  String name(dynamic x) => text(x, 'name');
+
+  void msg(Object e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))),
+    );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    load();
+  }
+
+  Future<void> load() async {
+    try {
+      final r = await Future.wait([
+        ApiService.get('lessons'),
+        ApiService.get('teachers'),
+        ApiService.get('students'),
+        ApiService.get('supervisors'),
+        ApiService.get('groups'),
+        ApiService.get('subjects'),
+      ]);
+      final ss = list(r[5]).map(sub).where((x) => x.isNotEmpty).toSet().toList();
+      if (!mounted) return;
+      setState(() {
+        lessons = list(r[0]);
+        teachers = list(r[1]);
+        students = list(r[2]);
+        supervisors = list(r[3]);
+        groups = list(r[4]);
+        subjects = ss.isEmpty ? fallback : ss;
+        loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => loading = false);
+      msg(e);
+    }
+  }
+
+  List<String> studentSubjects(dynamic s) {
+    final x = list(s is Map ? s['subjects'] : null)
+        .map(sub)
+        .where((v) => v.isNotEmpty)
+        .toSet()
+        .toList();
+    return x.isEmpty ? subjects : x;
+  }
+
+  List<dynamic> studentTeachers(dynamic s, String subject) {
+    final x = list(s is Map ? s['teachers'] : null).where((t) {
+      final p = t is Map ? t['pivot'] : null;
+      if (p is Map && p['subject'] != null) return '${p['subject']}' == subject;
+      return true;
+    }).toList();
+    return x.isEmpty ? teachers : x;
+  }
+
+  Future<void> form({String? initialType, dynamic item}) async {
+    if (teachers.isEmpty) {
+      msg(Exception('أضف مدرسًا أولًا.'));
+      return;
+    }
+
+    String type = item is Map && item['type'] != null
+        ? '${item['type']}'
+        : (initialType ?? 'private');
+    dynamic student = students.isEmpty ? null : students.first;
+    dynamic group = groups.isEmpty ? null : groups.first;
+
+    if (type == 'private' && student == null) {
+      msg(Exception('أضف طالبًا أولًا.'));
+      return;
+    }
+    if (type == 'group' && group == null) {
+      msg(Exception('أنشئ مجموعة أولًا.'));
+      return;
+    }
+
+    final itemSubject = item is Map ? item['subject'] : null;
+    String subject = itemSubject != null
+        ? '$itemSubject'
+        : (type == 'group'
+            ? text(group, 'subject', subjects.first)
+            : studentSubjects(student).first);
+
+    final itemTeacher = item is Map ? item['teacher'] : null;
+    final initialTeacher = type == 'group'
+        ? (group is Map ? group['teacher'] : null)
+        : studentTeachers(student, subject).first;
+    int teacherId = id(itemTeacher ?? initialTeacher);
+
+    final rawSupervisor = item is Map ? item['supervisor_id'] : null;
+    int? supervisorId = rawSupervisor == null
+        ? null
+        : int.tryParse('$rawSupervisor');
+
+    final rate = TextEditingController(
+      text: '${item is Map ? (item['teacher_rate'] ?? '') : (type == 'group' ? (group is Map ? (group['teacher_rate'] ?? '') : '') : '')}',
+    );
+    final starts = TextEditingController(text: '${item is Map ? (item['starts_at'] ?? '') : ''}');
+    final ends = TextEditingController(text: '${item is Map ? (item['ends_at'] ?? '') : ''}');
+    final key = GlobalKey<FormState>();
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialog) => StatefulBuilder(
+        builder: (ctx, set) {
+          final ts = type == 'group'
+              ? <dynamic>[group is Map ? group['teacher'] : null].where((e) => e != null).toList()
+              : studentTeachers(student, subject);
+          if (ts.isEmpty) ts.add(teachers.first);
+
+          final ss = type == 'group' ? <String>[subject] : studentSubjects(student);
+          if (ss.isEmpty) ss.addAll(subjects);
+          if (!ss.contains(subject)) subject = ss.first;
+          if (!ts.any((t) => id(t) == teacherId)) teacherId = id(ts.first);
+
+          return AlertDialog(
+            title: Text(
+              item == null
+                  ? (type == 'group' ? 'إضافة حصة جروب' : 'إضافة حصة خاصة')
+                  : 'تعديل الحصة',
+            ),
+            content: SizedBox(
+              width: 520,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: key,
+                  child: Column(
+                    children: [
+                      if (item == null)
+                        DropdownButtonFormField<String>(
+                          value: type,
+                          items: const [
+                            DropdownMenuItem(value: 'private', child: Text('حصة خاصة')),
+                            DropdownMenuItem(value: 'group', child: Text('حصة جروب')),
+                          ],
+                          onChanged: (v) {
+                            if (v == null) return;
+                            set(() {
+                              type = v;
+                              if (type == 'private') {
+                                student = students.first;
+                                subject = studentSubjects(student).first;
+                                teacherId = id(studentTeachers(student, subject).first);
+                              } else {
+                                group = groups.first;
+                                subject = text(group, 'subject', subjects.first);
+                                teacherId = id(group is Map ? group['teacher'] : null);
+                                rate.text = text(group, 'teacher_rate');
+                              }
+                            });
+                          },
+                        ),
+                      if (type == 'private')
+                        DropdownButtonFormField<int>(
+                          value: id(student),
+                          items: students
+                              .map((s) => DropdownMenuItem<int>(value: id(s), child: Text(name(s))))
+                              .toList(),
+                          onChanged: (v) {
+                            if (v == null) return;
+                            set(() {
+                              student = students.firstWhere((s) => id(s) == v);
+                              subject = studentSubjects(student).first;
+                              teacherId = id(studentTeachers(student, subject).first);
+                            });
+                          },
+                        ),
+                      if (type == 'group')
+                        DropdownButtonFormField<int>(
+                          value: id(group),
+                          items: groups
+                              .map((g) => DropdownMenuItem<int>(value: id(g), child: Text(name(g))))
+                              .toList(),
+                          onChanged: (v) {
+                            if (v == null) return;
+                            set(() {
+                              group = groups.firstWhere((g) => id(g) == v);
+                              subject = text(group, 'subject', subjects.first);
+                              teacherId = id(group is Map ? group['teacher'] : null);
+                              rate.text = text(group, 'teacher_rate');
+                            });
+                          },
+                        ),
+                      DropdownButtonFormField<int>(
+                        value: teacherId,
+                        items: ts
+                            .map((t) => DropdownMenuItem<int>(value: id(t), child: Text(name(t))))
+                            .toList(),
+                        onChanged: type == 'group' ? null : (v) {
+                          if (v != null) set(() => teacherId = v);
+                        },
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: subject,
+                        items: ss
+                            .map((s) => DropdownMenuItem<String>(value: s, child: Text(s)))
+                            .toList(),
+                        onChanged: type == 'group' ? null : (v) {
+                          if (v != null) set(() => subject = v);
+                        },
+                      ),
+                      if (supervisors.isNotEmpty)
+                        DropdownButtonFormField<int?>(
+                          value: supervisorId,
+                          items: [
+                            const DropdownMenuItem<int?>(value: null, child: Text('بدون مشرف')),
+                            ...supervisors.map((s) => DropdownMenuItem<int?>(value: id(s), child: Text(name(s)))),
+                          ],
+                          onChanged: (v) => set(() => supervisorId = v),
+                        ),
+                      TextFormField(
+                        controller: rate,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'سعر الحصة للمدرس *'),
+                        validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل سعرًا صحيحًا' : null,
+                      ),
+                      TextFormField(
+                        controller: starts,
+                        decoration: const InputDecoration(labelText: 'البداية YYYY-MM-DD HH:MM'),
+                        validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+                      ),
+                      TextFormField(
+                        controller: ends,
+                        decoration: const InputDecoration(labelText: 'النهاية YYYY-MM-DD HH:MM'),
+                        validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(dialog, false), child: const Text('إلغاء')),
+              FilledButton(
+                onPressed: () {
+                  if (key.currentState!.validate()) Navigator.pop(dialog, true);
+                },
+                child: const Text('حفظ'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (ok == true) {
+      try {
+        final b = {
+          'type': type,
+          'teacher_id': teacherId,
+          'supervisor_id': supervisorId,
+          'group_id': type == 'group' ? id(group) : null,
+          'student_id': type == 'private' ? id(student) : null,
+          'subject': subject,
+          'starts_at': starts.text.trim(),
+          'ends_at': ends.text.trim(),
+          'teacher_rate': double.parse(rate.text),
+          'status': item is Map ? (item['status'] ?? 'scheduled') : 'scheduled',
+        };
+        if (item == null) {
+          await ApiService.post('lessons', b);
+        } else {
+          await ApiService.put('lessons/${id(item)}', b);
+        }
+        await load();
+      } catch (e) {
+        msg(e);
+      }
+    }
+
+    for (final c in [rate, starts, ends]) c.dispose();
+  }
+
+  Future<void> remove(dynamic item) async {
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('حذف الحصة'),
+        content: const Text('هل تريد حذف هذه الحصة؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(d, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      try {
+        await ApiService.delete('lessons/${id(item)}');
+        await load();
+      } catch (e) {
+        msg(e);
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('الدروس والحصص'),
+        actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
+      ),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => form(initialType: 'private'),
+                          child: const Text('حصة خاصة'),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: FilledButton(
+                          onPressed: () => form(initialType: 'group'),
+                          child: const Text('حصة جروب'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  for (final l in lessons)
+                    Card(
+                      child: ListTile(
+                        title: Text(text(l, 'subject')),
+                        subtitle: Text(
+                          '${text(l, 'type') == 'group' ? 'جروب' : 'خاصة'} • ${name(l is Map ? l['teacher'] : null)}\n'
+                          '${text(l, 'type') == 'group' ? name(l is Map ? l['group'] : null) : name(l is Map ? l['student'] : null)}\n'
+                          '${text(l, 'starts_at')}',
+                        ),
+                        isThreeLine: true,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            IconButton(onPressed: () => form(item: l), icon: const Icon(Icons.edit)),
+                            IconButton(onPressed: () => remove(l), icon: const Icon(Icons.delete)),
+                          ],
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+    );
+  }
 }
