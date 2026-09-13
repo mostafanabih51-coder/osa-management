@@ -2,76 +2,11 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class TeachersScreen extends StatefulWidget {
-  const TeachersScreen({super.key});
-  @override State<TeachersScreen> createState() => _TeachersScreenState();
-}
-
-class _TeachersScreenState extends State<TeachersScreen> {
-  List<dynamic> teachers = [];
-  bool loading = true;
-
-  @override void initState() { super.initState(); load(); }
-  Future<void> load() async {
-    try { final r = await ApiService.get('teachers'); if (mounted) setState(() { teachers = List<dynamic>.from(r['data'] ?? r); loading = false; }); }
-    catch (e) { if (mounted) { setState(() => loading = false); ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); } }
-  }
-
-  Future<void> add() async {
-    final name = TextEditingController(), phone = TextEditingController(), email = TextEditingController(), spec = TextEditingController(), rate = TextEditingController();
-    final key = GlobalKey<FormState>();
-    final ok = await showDialog<bool>(context: context, builder: (c) => AlertDialog(
-      title: const Text('إضافة مدرس'),
-      content: SingleChildScrollView(child: Form(key: key, child: Column(children: [
-        TextFormField(controller: name, decoration: const InputDecoration(labelText: 'الاسم'), validator: (v) => v!.trim().isEmpty ? 'مطلوب' : null),
-        TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'الهاتف')),
-        TextFormField(controller: email, decoration: const InputDecoration(labelText: 'البريد الإلكتروني')),
-        TextFormField(controller: spec, decoration: const InputDecoration(labelText: 'التخصص')),
-        TextFormField(controller: rate, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'سعر الساعة')),
-      ]))),
-      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(c, true); }, child: const Text('حفظ'))],
-    ));
-    if (ok != true) return;
-    try { await ApiService.post('teachers', {'name': name.text.trim(), 'phone': phone.text.trim(), 'email': email.text.trim(), 'specialization': spec.text.trim(), 'hourly_rate': double.tryParse(rate.text) ?? 0, 'active': true}); await load(); }
-    catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
-  }
-
-  Future<void> details(dynamic id) async {
-    try {
-      final r = await ApiService.get('teachers/$id');
-      if (!mounted) return;
-      final d = Map<String, dynamic>.from(r['data'] ?? r);
-      final students = d['students'] is List ? List<dynamic>.from(d['students']) : <dynamic>[];
-      final groups = d['groups'] is List ? List<dynamic>.from(d['groups']) : <dynamic>[];
-      showDialog(context: context, builder: (c) => AlertDialog(
-        title: Text('${d['teacher'] is Map ? d['teacher']['name'] : d['name'] ?? 'المدرس'}'),
-        content: SizedBox(width: 420, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text('عدد الطلاب: ${students.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (students.isNotEmpty) ...students.map((s) => ListTile(dense: true, leading: const Icon(Icons.person), title: Text('${s['name'] ?? 'طالب'}'))),
-          const Divider(),
-          Text('عدد المجموعات: ${groups.length}', style: const TextStyle(fontWeight: FontWeight.bold)),
-          if (groups.isNotEmpty) ...groups.map((g) => ListTile(dense: true, leading: const Icon(Icons.groups), title: Text('${g['name'] ?? 'مجموعة'}'))),
-          const Divider(),
-          Text('إجمالي المستحق: ${d['due'] ?? 0}'),
-          Text('إجمالي المدفوع: ${d['paid'] ?? 0}'),
-          Text('المتبقي: ${d['remaining'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        ]))),
-        actions: [TextButton(onPressed: () => Navigator.pop(c), child: const Text('إغلاق'))],
-      ));
-    } catch (e) { if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', '')))); }
-  }
-
-  @override Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('المدرسون'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
-      floatingActionButton: FloatingActionButton(onPressed: add, child: const Icon(Icons.add)),
-      body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(
-        onRefresh: load,
-        child: ListView.builder(padding: const EdgeInsets.all(16), itemCount: teachers.length, itemBuilder: (_, i) {
-          final t = teachers[i];
-          return Card(child: ListTile(onTap: () => details(t['id']), leading: CircleAvatar(backgroundColor: AppColors.black, child: Text('${i + 1}', style: const TextStyle(color: Colors.white))), title: Text('${t['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text('${t['phone'] ?? t['email'] ?? ''}'), trailing: const Icon(Icons.chevron_left)));
-        }),
-      ),
-    );
-  }
-}
+class TeachersScreen extends StatefulWidget{const TeachersScreen({super.key});@override State<TeachersScreen> createState()=>_TeachersScreenState();}
+class _TeachersScreenState extends State<TeachersScreen>{List teachers=[],students=[],subjects=[],supervisors=[];bool loading=true;List<dynamic> list(dynamic x)=>x is List?List<dynamic>.from(x):x is Map&&x['data'] is List?List<dynamic>.from(x['data']):[];@override void initState(){super.initState();load();}
+Future<void> load()async{try{final r=await Future.wait([ApiService.get('teachers'),ApiService.get('students'),ApiService.get('subjects'),ApiService.get('supervisors')]);if(!mounted)return;setState((){teachers=list(r[0]);students=list(r[1]);subjects=list(r[2]);supervisors=list(r[3]);loading=false;});}catch(e){if(mounted){setState(()=>loading=false);msg(e);}}}
+void msg(Object e)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));
+Future<void> add()async{final n=TextEditingController(),p=TextEditingController(),e=TextEditingController(),s=TextEditingController();final k=GlobalKey<FormState>();final ok=await showDialog<bool>(context:context,builder:(c)=>AlertDialog(title:const Text('إضافة مدرس'),content:Form(key:k,child:Column(mainAxisSize:MainAxisSize.min,children:[TextFormField(controller:n,decoration:const InputDecoration(labelText:'الاسم'),validator:(v)=>v!.trim().isEmpty?'مطلوب':null),TextFormField(controller:p,decoration:const InputDecoration(labelText:'الهاتف')),TextFormField(controller:e,decoration:const InputDecoration(labelText:'البريد')),TextFormField(controller:s,decoration:const InputDecoration(labelText:'التخصص'))]),),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(k.currentState!.validate())Navigator.pop(c,true);},child:const Text('حفظ'))]));if(ok==true)try{await ApiService.post('teachers',{'name':n.text.trim(),'phone':p.text.trim(),'email':e.text.trim(),'specialization':s.text.trim(),'status':'active'});await load();}catch(x){msg(x);}finally{for(final c in[n,p,e,s])c.dispose();}}
+Future<void> details(int id)async{try{final r=await ApiService.get('teachers/$id');final d=Map<String,dynamic>.from(r['data']??r);if(!mounted)return;showDialog(context:context,builder:(c)=>AlertDialog(title:Text('${d['teacher']?['name']??'المدرس'}'),content:SizedBox(width:500,child:SingleChildScrollView(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('الطلاب المرتبطون: ${list(d['students']).length}',style:const TextStyle(fontWeight:FontWeight.bold)),...list(d['students']).map((x)=>Text('• ${x['name']??''}')),const Divider(),Text('العلاقات وأسعار الحصص',style:const TextStyle(fontWeight:FontWeight.bold)),...list(d['assignments']).map((x){final r=double.tryParse('${x['teacher_rate']??0}')??0,p=double.tryParse('${x['academy_percentage']??0}')??0,t=r*(1+p/100);return Text('• ${x['student']?['name']??''} / ${x['subject']??''} — سعر الحصة: ${r.toStringAsFixed(2)} — نسبة الأكاديمية: ${p.toStringAsFixed(2)}% — الإجمالي النهائي: ${t.toStringAsFixed(2)}');}),const Divider(),Text('Private: ${list(d['private_lessons']).length}'),Text('Group: ${list(d['group_lessons']).length}'),Text('المستحق: ${d['due']??0}'),Text('المدفوع: ${d['paid']??0}'),Text('المتبقي: ${d['remaining']??0}',style:const TextStyle(fontWeight:FontWeight.bold)),const SizedBox(height:12),FilledButton.icon(onPressed:()=>assignmentDialog(id),icon:const Icon(Icons.link),label:const Text('ربط طالب + مادة + سعر الحصة'))])),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('إغلاق'))]));}catch(e){msg(e);}}
+Future<void> assignmentDialog(int teacherId)async{if(students.isEmpty||subjects.isEmpty){msg(Exception('أضف طالبًا ومواد أولًا'));return;}int studentId=students.first['id'];String subject='${subjects.first}';int? supervisorId;final rate=TextEditingController(text:'0'),pct=TextEditingController(text:'0');final ok=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,setD){final total=(double.tryParse(rate.text)??0)*(1+(double.tryParse(pct.text)??0)/100);return AlertDialog(title:const Text('تحديد علاقة المدرس'),content:SingleChildScrollView(child:Column(mainAxisSize:MainAxisSize.min,children:[DropdownButtonFormField<int>(value:studentId,decoration:const InputDecoration(labelText:'الطالب'),items:students.map((x)=>DropdownMenuItem(value:x['id'] as int,child:Text('${x['name']}'))).toList(),onChanged:(v){if(v!=null)setD(()=>studentId=v);}),DropdownButtonFormField<String>(value:subject,decoration:const InputDecoration(labelText:'المادة'),items:subjects.map((x)=>DropdownMenuItem(value:'$x',child:Text('$x'))).toList(),onChanged:(v){if(v!=null)setD(()=>subject=v);}),TextField(controller:rate,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'سعر الحصة للمدرس'),onChanged:(_)=>setD((){})),TextField(controller:pct,keyboardType:TextInputType.number,decoration:const InputDecoration(labelText:'نسبة الأكاديمية %'),onChanged:(_)=>setD((){})),if(supervisors.isNotEmpty)DropdownButtonFormField<int?>(value:supervisorId,decoration:const InputDecoration(labelText:'المشرف اختياري'),items:[const DropdownMenuItem<int?>(value:null,child:Text('بدون مشرف')),...supervisors.map((x)=>DropdownMenuItem<int?>(value:x['id'] as int,child:Text('${x['name']}')))],onChanged:(v)=>setD(()=>supervisorId=v)),const SizedBox(height:8),Align(alignment:Alignment.centerRight,child:Text('الإجمالي النهائي: ${total.toStringAsFixed(2)}',style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)))])),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(c,true),child:const Text('حفظ'))]));if(ok==true)try{await ApiService.post('teacher-assignments',{'teacher_id':teacherId,'student_id':studentId,'subject':subject,'teacher_rate':double.tryParse(rate.text)??0,'academy_percentage':double.tryParse(pct.text)??0,'supervisor_id':supervisorId});await load();}catch(e){msg(e);}finally{rate.dispose();pct.dispose();}}
+@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('المدرسون'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton(onPressed:add,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:teachers.length,itemBuilder:(_,i){final t=teachers[i];return Card(child:ListTile(onTap:()=>details(t['id']),leading:CircleAvatar(backgroundColor:AppColors.black,child:Text('${i+1}',style:const TextStyle(color:Colors.white))),title:Text('${t['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${t['phone']??t['email']??''}'),trailing:const Icon(Icons.chevron_left)));}));}

@@ -2,160 +2,23 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class StudentsScreen extends StatefulWidget {
-  const StudentsScreen({super.key});
-
-  @override
-  State<StudentsScreen> createState() => _StudentsScreenState();
-}
-
-class _StudentsScreenState extends State<StudentsScreen> {
-  List students = [];
-  bool loading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    loadStudents();
-  }
-
-  Future<void> loadStudents() async {
-    try {
-      final data = await ApiService.get('students');
-      if (!mounted) return;
-      setState(() {
-        students = data['data'] ?? data['students'] ?? [];
-        loading = false;
-      });
-    } catch (_) {
-      if (mounted) setState(() => loading = false);
-    }
-  }
-
-  Future<void> addStudent() async {
-    final formKey = GlobalKey<FormState>();
-    final name = TextEditingController();
-    final phone = TextEditingController();
-    final parentName = TextEditingController();
-    final parentPhone = TextEditingController();
-    final grade = TextEditingController();
-    final curriculum = TextEditingController();
-    var saving = false;
-
-    try {
-      await showDialog<void>(
-        context: context,
-        builder: (dialogContext) => StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
-            title: const Text('إضافة طالب'),
-            content: SizedBox(
-              width: 420,
-              child: Form(
-                key: formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      TextFormField(
-                        controller: name,
-                        autofocus: true,
-                        decoration: const InputDecoration(labelText: 'اسم الطالب *'),
-                        validator: (v) => v == null || v.trim().isEmpty ? 'اكتب اسم الطالب' : null,
-                      ),
-                      TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'هاتف الطالب')),
-                      TextFormField(controller: parentName, decoration: const InputDecoration(labelText: 'اسم ولي الأمر')),
-                      TextFormField(controller: parentPhone, decoration: const InputDecoration(labelText: 'هاتف ولي الأمر')),
-                      TextFormField(controller: grade, decoration: const InputDecoration(labelText: 'الصف')),
-                      TextFormField(controller: curriculum, decoration: const InputDecoration(labelText: 'المنهج')),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            actions: [
-              TextButton(onPressed: saving ? null : () => Navigator.pop(dialogContext), child: const Text('إلغاء')),
-              FilledButton(
-                onPressed: saving
-                    ? null
-                    : () async {
-                        if (!formKey.currentState!.validate()) return;
-                        setDialogState(() => saving = true);
-                        try {
-                          await ApiService.post('students', {
-                            'name': name.text.trim(),
-                            'phone': _nullable(phone.text),
-                            'parent_name': _nullable(parentName.text),
-                            'parent_phone': _nullable(parentPhone.text),
-                            'grade': _nullable(grade.text),
-                            'curriculum': _nullable(curriculum.text),
-                            'status': 'active',
-                          });
-                          if (!mounted) return;
-                          Navigator.pop(dialogContext);
-                          await loadStudents();
-                          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تمت إضافة الطالب بنجاح')));
-                        } on ApiException catch (e) {
-                          setDialogState(() => saving = false);
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
-                        } catch (_) {
-                          setDialogState(() => saving = false);
-                          if (context.mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('تعذر حفظ الطالب')));
-                        }
-                      },
-                child: saving ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : const Text('حفظ'),
-              ),
-            ],
-          ),
-        ),
-      );
-    } finally {
-      name.dispose();
-      phone.dispose();
-      parentName.dispose();
-      parentPhone.dispose();
-      grade.dispose();
-      curriculum.dispose();
-    }
-  }
-
-  String? _nullable(String value) => value.trim().isEmpty ? null : value.trim();
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('الطلاب')),
-      floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.red,
-        foregroundColor: Colors.white,
-        onPressed: addStudent,
-        child: const Icon(Icons.add),
-      ),
-      body: loading
-          ? const Center(child: CircularProgressIndicator())
-          : students.isEmpty
-              ? RefreshIndicator(
-                  onRefresh: loadStudents,
-                  child: ListView(children: const [SizedBox(height: 260), Center(child: Text('لا يوجد طلاب حاليًا', style: TextStyle(fontSize: 18)))]),
-                )
-              : RefreshIndicator(
-                  onRefresh: loadStudents,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.all(16),
-                    itemCount: students.length,
-                    itemBuilder: (_, index) {
-                      final student = students[index];
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 10),
-                        child: ListTile(
-                          leading: CircleAvatar(backgroundColor: AppColors.red, child: Text('${index + 1}', style: const TextStyle(color: Colors.white))),
-                          title: Text('${student['name'] ?? 'بدون اسم'}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                          subtitle: Text('${student['phone'] ?? student['email'] ?? ''}'),
-                          trailing: const Icon(Icons.chevron_left),
-                        ),
-                      );
-                    },
-                  ),
-                ),
-    );
-  }
+class StudentsScreen extends StatefulWidget { const StudentsScreen({super.key}); @override State<StudentsScreen> createState()=>_StudentsScreenState(); }
+class _StudentsScreenState extends State<StudentsScreen>{
+ List students=[], subjects=[]; bool loading=true;
+ List<dynamic> list(dynamic x)=>x is List?List<dynamic>.from(x):x is Map&&x['data'] is List?List<dynamic>.from(x['data']):[];
+ @override void initState(){super.initState();load();}
+ Future<void> load()async{try{final r=await Future.wait([ApiService.get('students'),ApiService.get('subjects')]);if(!mounted)return;setState((){students=list(r[0]);subjects=list(r[1]);loading=false;});}catch(e){if(mounted){setState(()=>loading=false);msg(e);}}}
+ void msg(Object e)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(e.toString().replaceFirst('Exception: ',''))));
+ Future<void> add()async{
+  if(subjects.isEmpty){msg(Exception('لا توجد مواد متاحة'));return;}
+  final name=TextEditingController(),phone=TextEditingController(),parent=TextEditingController(),parentPhone=TextEditingController(),grade=TextEditingController(),curr=TextEditingController();final key=GlobalKey<FormState>();final selected=<String>{};
+  final ok=await showDialog<bool>(context:context,builder:(c)=>StatefulBuilder(builder:(c,setD)=>AlertDialog(title:const Text('إضافة طالب'),content:SizedBox(width:430,child:Form(key:key,child:SingleChildScrollView(child:Column(children:[
+   TextFormField(controller:name,decoration:const InputDecoration(labelText:'اسم الطالب *'),validator:(v)=>v==null||v.trim().isEmpty?'مطلوب':null),TextFormField(controller:phone,decoration:const InputDecoration(labelText:'هاتف الطالب')),TextFormField(controller:parent,decoration:const InputDecoration(labelText:'اسم ولي الأمر')),TextFormField(controller:parentPhone,decoration:const InputDecoration(labelText:'هاتف ولي الأمر')),TextFormField(controller:grade,decoration:const InputDecoration(labelText:'الصف')),TextFormField(controller:curr,decoration:const InputDecoration(labelText:'المنهج')),
+   const SizedBox(height:12),const Align(alignment:Alignment.centerRight,child:Text('المواد المشترك بها',style:TextStyle(fontWeight:FontWeight.bold))),...subjects.map((s){final v='$s';return CheckboxListTile(dense:true,value:selected.contains(v),title:Text(v),onChanged:(x)=>setD((){x==true?selected.add(v):selected.remove(v);}));})
+  ])))),actions:[TextButton(onPressed:()=>Navigator.pop(c,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(key.currentState!.validate())Navigator.pop(c,true);},child:const Text('حفظ'))]));
+  if(ok!=true)return;try{await ApiService.post('students',{'name':name.text.trim(),'phone':phone.text.trim(),'parent_name':parent.text.trim(),'parent_phone':parentPhone.text.trim(),'grade':grade.text.trim(),'curriculum':curr.text.trim(),'status':'active','subjects':selected.toList()});await load();}catch(e){msg(e);}finally{for(final x in [name,phone,parent,parentPhone,grade,curr])x.dispose();}
+ }
+ Future<void> details(dynamic id)async{try{final r=await ApiService.get('students/$id');final d=Map<String,dynamic>.from(r['data']??r);if(!mounted)return;final ss=list(d['subjects']),ts=list(d['teachers']),gs=list(d['groups']),ls=list(d['lessons']),subs=list(d['subscriptions']),ps=list(d['payments']);showDialog(context:context,builder:(c)=>AlertDialog(title:Text('${d['name']??'الطالب'}'),content:SizedBox(width:460,child:SingleChildScrollView(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[_section('المواد',ss.map((x)=>'${x['subject']??x}').toList()),_section('المدرسون',ts.map((x)=>'${x['name']??''} • ${x['pivot']?['subject']??''} • سعر الحصة: ${x['pivot']?['teacher_rate']??0}').toList()),_section('المجموعات',gs.map((x)=>'${x['name']??''}').toList()),_section('الحصص',ls.map((x)=>'${x['subject']??''} • ${x['starts_at']??''}').toList()),_section('الاشتراكات',subs.map((x)=>'${x['subject']??''} • ${x['amount']??0}').toList()),_section('المدفوعات',ps.map((x)=>'${x['amount']??0} • ${x['paid_on']??''}').toList())]))),actions:[TextButton(onPressed:()=>Navigator.pop(c),child:const Text('إغلاق'))]));}catch(e){msg(e);}}
+ Widget _section(String title,List<String> values)=>Padding(padding:const EdgeInsets.only(bottom:10),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(title,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:16)),if(values.isEmpty)const Text('لا يوجد'),...values.map((v)=>Padding(padding:const EdgeInsets.only(top:4),child:Text('• $v'))),const Divider()]));
+ @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('الطلاب'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton(onPressed:add,backgroundColor:AppColors.red,child:const Icon(Icons.add)),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:ListView.builder(padding:const EdgeInsets.all(16),itemCount:students.length,itemBuilder:(_,i){final s=students[i];return Card(child:ListTile(onTap:()=>details(s['id']),leading:CircleAvatar(backgroundColor:AppColors.red,child:Text('${i+1}',style:const TextStyle(color:Colors.white))),title:Text('${s['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${s['phone']??''}\nمواد: ${list(s['subjects']).length} • مدرسون: ${list(s['teachers']).length}'),isThreeLine:true,trailing:const Icon(Icons.chevron_left)));}));
 }
