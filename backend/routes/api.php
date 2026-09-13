@@ -6,14 +6,14 @@ use App\Http\Controllers\FinanceController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\UserController;
 
-Route::get('/health', fn () => ['status' => 'ok', 'service' => 'osa-api', 'version' => '1.3']);
+Route::get('/health', fn () => ['status' => 'ok', 'service' => 'osa-api', 'version' => '1.4']);
 Route::post('/login', [ApiController::class, 'login']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', fn () => request()->user());
     Route::post('/logout', [ApiController::class, 'logout']);
-
     Route::get('/dashboard', [ApiController::class, 'dashboard']);
+    Route::get('/subjects', [ApiController::class, 'subjects']);
 
     Route::middleware('admin')->group(function () {
         Route::get('/users', [UserController::class, 'index']);
@@ -29,6 +29,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/students/{student}', [ApiController::class, 'update']);
         Route::patch('/students/{student}', [ApiController::class, 'update']);
         Route::delete('/students/{student}', [ApiController::class, 'destroy']);
+        Route::post('/students/{student}/teachers', [ApiController::class, 'assignStudentTeacher']);
+        Route::delete('/students/{student}/teachers/{assignment}', [ApiController::class, 'removeStudentTeacher']);
     });
 
     Route::middleware('permission:view_teachers')->group(function () {
@@ -41,14 +43,16 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware('permission:view_supervisors')->group(function () {
         Route::get('/supervisors', [ApiController::class, 'supervisors']);
+        Route::get('/supervisors/{supervisor}', [ApiController::class, 'supervisorDetails']);
     });
     Route::middleware('permission:manage_supervisors')->group(function () {
         Route::post('/supervisors', [ApiController::class, 'storeSupervisor']);
+        Route::put('/supervisors/{supervisor}', [ApiController::class, 'updateSupervisor']);
+        Route::patch('/supervisors/{supervisor}', [ApiController::class, 'updateSupervisor']);
+        Route::delete('/supervisors/{supervisor}', [ApiController::class, 'destroySupervisor']);
     });
 
-    Route::middleware('permission:view_groups')->group(function () {
-        Route::get('/groups', [ApiController::class, 'groups']);
-    });
+    Route::middleware('permission:view_groups')->group(function () { Route::get('/groups', [ApiController::class, 'groups']); });
     Route::middleware('permission:manage_groups')->group(function () {
         Route::post('/groups', [ApiController::class, 'storeGroup']);
         Route::put('/groups/{group}', [ApiController::class, 'updateGroup']);
@@ -58,26 +62,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/groups/{group}/students/{student}', [ApiController::class, 'removeStudentFromGroup']);
     });
 
-    Route::middleware('permission:view_schedules')->group(function () {
-        Route::get('/schedules', [ApiController::class, 'schedules']);
-    });
-    Route::middleware('permission:manage_schedules')->group(function () {
-        Route::post('/schedules', [ApiController::class, 'storeSchedule']);
-    });
+    Route::middleware('permission:view_schedules')->group(function () { Route::get('/schedules', [ApiController::class, 'schedules']); });
+    Route::middleware('permission:manage_schedules')->group(function () { Route::post('/schedules', [ApiController::class, 'storeSchedule']); });
+    Route::middleware('permission:view_attendance')->group(function () { Route::get('/attendance', [ApiController::class, 'attendance']); });
+    Route::middleware('permission:manage_attendance')->group(function () { Route::post('/attendance', [ApiController::class, 'storeAttendance']); });
 
-    Route::middleware('permission:view_attendance')->group(function () {
-        Route::get('/attendance', [ApiController::class, 'attendance']);
-    });
-    Route::middleware('permission:manage_attendance')->group(function () {
-        Route::post('/attendance', [ApiController::class, 'storeAttendance']);
-    });
-
-    Route::middleware('permission:view_subscriptions')->group(function () {
-        Route::get('/subscriptions', [ApiController::class, 'subscriptions']);
-    });
-    Route::middleware('permission:manage_subscriptions')->group(function () {
-        Route::post('/subscriptions', [ApiController::class, 'storeSubscription']);
-    });
+    Route::middleware('permission:view_subscriptions')->group(function () { Route::get('/subscriptions', [ApiController::class, 'subscriptions']); });
+    Route::middleware('permission:manage_subscriptions')->group(function () { Route::post('/subscriptions', [ApiController::class, 'storeSubscription']); });
 
     Route::middleware('permission:view_finance')->group(function () {
         Route::get('/payments', [ApiController::class, 'payments']);
