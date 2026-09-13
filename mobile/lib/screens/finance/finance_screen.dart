@@ -128,6 +128,27 @@ class _FinanceScreenState extends State<FinanceScreen> {
     catch (e) { msg(e.toString().replaceFirst('Exception: ', '')); }
   }
 
+  Future<void> editWithdrawalSetting(dynamic setting) async {
+    final type = '${setting['recipient_type'] ?? 'teacher'}';
+    bool enabled = setting['enabled'] == true;
+    final minimum = TextEditingController(text: '${setting['minimum_amount'] ?? 0}');
+    final key = GlobalKey<FormState>();
+    final ok = await showDialog<bool>(context: context, builder: (c) => StatefulBuilder(builder: (c, setD) => AlertDialog(
+      title: Text(type == 'teacher' ? 'إعداد سحب المدرسين' : 'إعداد سحب المشرفين'),
+      content: Form(key: key, child: Column(mainAxisSize: MainAxisSize.min, children: [
+        SwitchListTile(title: const Text('فتح السحب'), value: enabled, onChanged: (v) => setD(() => enabled = v)),
+        TextFormField(controller: minimum, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'الحد الأدنى للسحب'), validator: (v) => double.tryParse(v ?? '') == null || double.parse(v!) < 0 ? 'أدخل مبلغًا صحيحًا' : null),
+      ])),
+      actions: [TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(c, true); }, child: const Text('حفظ'))],
+    )));
+    if (ok != true) return;
+    try {
+      await ApiService.post('finance/withdrawal-settings', {'recipient_type': type, 'enabled': enabled, 'minimum_amount': double.parse(minimum.text)});
+      await load();
+      msg('تم تحديث إعدادات السحب');
+    } catch (e) { msg(e.toString().replaceFirst('Exception: ', '')); }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -150,7 +171,7 @@ class _FinanceScreenState extends State<FinanceScreen> {
         ...bonuses.map((b) => Card(child: ListTile(title: Text('${b['name'] ?? 'مكافأة'}'), subtitle: Text('${b['recipient_type'] ?? ''} • ${b['bonus_date'] ?? ''}'), trailing: Text('${b['amount'] ?? 0}')))),
         if (settings.isNotEmpty) ...[
           const SizedBox(height: 12), const Text('إعدادات السحب', style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold)),
-          ...settings.map((s) => Card(child: ListTile(title: Text(s['recipient_type'] == 'teacher' ? 'سحب المدرسين' : 'سحب المشرفين'), subtitle: Text('الحد الأدنى: ${s['minimum_amount'] ?? 0} • ${s['enabled'] == true ? 'مفتوح' : 'مغلق'}')))),
+          ...settings.map((s) => Card(child: ListTile(title: Text(s['recipient_type'] == 'teacher' ? 'سحب المدرسين' : 'سحب المشرفين'), subtitle: Text('الحد الأدنى: ${s['minimum_amount'] ?? 0} • ${s['enabled'] == true ? 'مفتوح' : 'مغلق'}'), trailing: IconButton(icon: const Icon(Icons.settings), onPressed: () => editWithdrawalSetting(s))))),
         ],
       ])),
     );
