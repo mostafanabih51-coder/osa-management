@@ -4,6 +4,7 @@ import '../../services/api_service.dart';
 
 class StudentsScreen extends StatefulWidget {
   const StudentsScreen({super.key});
+
   @override
   State<StudentsScreen> createState() => _StudentsScreenState();
 }
@@ -71,15 +72,15 @@ class _StudentsScreenState extends State<StudentsScreen> {
     }
   }
 
-  Future<void> add() async {
-    final name = TextEditingController();
-    final phone = TextEditingController();
-    final parent = TextEditingController();
-    final parentPhone = TextEditingController();
-    final grade = TextEditingController();
-    final curriculum = TextEditingController();
-    final selected = <String>{};
-    final form = GlobalKey<FormState>();
+  Future<void> editForm({Map<String, dynamic>? existing}) async {
+    final name = TextEditingController(text: '${existing?['name'] ?? ''}');
+    final phone = TextEditingController(text: '${existing?['phone'] ?? ''}');
+    final parent = TextEditingController(text: '${existing?['parent_name'] ?? ''}');
+    final parentPhone = TextEditingController(text: '${existing?['parent_phone'] ?? ''}');
+    final grade = TextEditingController(text: '${existing?['grade'] ?? ''}');
+    final curriculum = TextEditingController(text: '${existing?['curriculum'] ?? ''}');
+    final selected = <String>{...list(existing?['subjects']).map(subjectName)};
+    final formKey = GlobalKey<FormState>();
 
     final saved = await showDialog<bool>(
       context: context,
@@ -87,18 +88,20 @@ class _StudentsScreenState extends State<StudentsScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: const Text('إضافة طالب'),
+              title: Text(existing == null ? 'إضافة طالب' : 'تعديل بيانات الطالب'),
               content: SizedBox(
                 width: 520,
                 child: SingleChildScrollView(
                   child: Form(
-                    key: form,
+                    key: formKey,
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        const Text('أدخل بيانات الطالب، ثم اختر المواد المشترك بها من القائمة.'),
-                        const SizedBox(height: 10),
-                        TextFormField(controller: name, decoration: const InputDecoration(labelText: 'اسم الطالب *'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
+                        TextFormField(
+                          controller: name,
+                          decoration: const InputDecoration(labelText: 'اسم الطالب *'),
+                          validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+                        ),
                         TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'هاتف الطالب')),
                         TextFormField(controller: parent, decoration: const InputDecoration(labelText: 'اسم ولي الأمر')),
                         TextFormField(controller: parentPhone, decoration: const InputDecoration(labelText: 'هاتف ولي الأمر')),
@@ -106,10 +109,12 @@ class _StudentsScreenState extends State<StudentsScreen> {
                         TextFormField(controller: curriculum, decoration: const InputDecoration(labelText: 'المنهج')),
                         const SizedBox(height: 14),
                         const Text('المواد المشترك بها *', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        const Text('اختر مادة أو أكثر بالضغط على المربع.'),
                         const SizedBox(height: 6),
                         Container(
-                          decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(
+                            border: Border.all(color: Colors.grey.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Column(
                             children: subjects.map((subject) {
                               return CheckboxListTile(
@@ -130,11 +135,6 @@ class _StudentsScreenState extends State<StudentsScreen> {
                             }).toList(),
                           ),
                         ),
-                        if (selected.isNotEmpty)
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8),
-                            child: Text('المختار: ${selected.join('، ')}', style: const TextStyle(fontWeight: FontWeight.w600)),
-                          ),
                       ],
                     ),
                   ),
@@ -142,16 +142,17 @@ class _StudentsScreenState extends State<StudentsScreen> {
               ),
               actions: [
                 TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
-                FilledButton.icon(
+                FilledButton(
                   onPressed: () {
-                    if (form.currentState!.validate() && selected.isNotEmpty) {
+                    if (formKey.currentState!.validate() && selected.isNotEmpty) {
                       Navigator.pop(dialogContext, true);
                     } else if (selected.isEmpty) {
-                      ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content: Text('اختر مادة واحدة على الأقل.')));
+                      ScaffoldMessenger.of(dialogContext).showSnackBar(
+                        const SnackBar(content: Text('اختر مادة واحدة على الأقل.')),
+                      );
                     }
                   },
-                  icon: const Icon(Icons.save),
-                  label: const Text('حفظ الطالب'),
+                  child: Text(existing == null ? 'حفظ الطالب' : 'حفظ التعديل'),
                 ),
               ],
             );
@@ -162,7 +163,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
 
     if (saved == true) {
       try {
-        await ApiService.post('students', {
+        final body = {
           'name': name.text.trim(),
           'phone': phone.text.trim(),
           'parent_name': parent.text.trim(),
@@ -171,24 +172,51 @@ class _StudentsScreenState extends State<StudentsScreen> {
           'curriculum': curriculum.text.trim(),
           'status': 'active',
           'subjects': selected.toList(),
-        });
+        };
+        if (existing == null) {
+          await ApiService.post('students', body);
+        } else {
+          await ApiService.put('students/${id(existing)}', body);
+        }
         await load();
       } catch (e) {
         msg(e);
       }
     }
-    name.dispose();
-    phone.dispose();
-    parent.dispose();
-    parentPhone.dispose();
-    grade.dispose();
-    curriculum.dispose();
+
+    for (final controller in [name, phone, parent, parentPhone, grade, curriculum]) {
+      controller.dispose();
+    }
+  }
+
+  Future<void> remove(Map<String, dynamic> student) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف الطالب'),
+        content: Text('هل تريد حذف «${student['name'] ?? ''}»؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+
+    try {
+      await ApiService.delete('students/${id(student)}');
+      await load();
+    } catch (e) {
+      msg(e);
+    }
   }
 
   Future<void> details(int studentId) async {
     try {
       final response = await ApiService.get('students/$studentId');
-      final data = Map<String, dynamic>.from(response is Map && response['data'] is Map ? response['data'] : response);
+      final data = Map<String, dynamic>.from(
+        response is Map && response['data'] is Map ? response['data'] : response,
+      );
       if (!mounted) return;
       final sections = <String, List<dynamic>>{
         'المواد': list(data['subjects']),
@@ -239,26 +267,53 @@ class _StudentsScreenState extends State<StudentsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('الطلاب'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
-      floatingActionButton: FloatingActionButton.extended(onPressed: add, backgroundColor: AppColors.red, icon: const Icon(Icons.person_add), label: const Text('إضافة طالب')),
+      appBar: AppBar(
+        title: const Text('الطلاب'),
+        actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => editForm(),
+        backgroundColor: AppColors.red,
+        icon: const Icon(Icons.person_add),
+        label: const Text('إضافة طالب'),
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: load,
               child: students.isEmpty
-                  ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا يوجد طلاب بعد. اضغط «إضافة طالب» للبدء.'))])
+                  ? ListView(
+                      children: const [
+                        SizedBox(height: 180),
+                        Center(child: Text('لا يوجد طلاب بعد. اضغط «إضافة طالب» للبدء.')),
+                      ],
+                    )
                   : ListView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                       itemCount: students.length,
                       itemBuilder: (_, index) {
-                        final student = students[index];
+                        final student = Map<String, dynamic>.from(students[index]);
                         return Card(
                           child: ListTile(
                             onTap: () => details(id(student)),
                             leading: const CircleAvatar(child: Icon(Icons.person)),
-                            title: Text('${student['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            title: Text(
+                              '${student['name'] ?? ''}',
+                              style: const TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             subtitle: Text('${student['phone'] ?? ''}'),
-                            trailing: const Icon(Icons.chevron_left),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (value) {
+                                if (value == 'details') details(id(student));
+                                if (value == 'edit') editForm(existing: student);
+                                if (value == 'delete') remove(student);
+                              },
+                              itemBuilder: (_) => const [
+                                PopupMenuItem(value: 'details', child: Text('التفاصيل')),
+                                PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                                PopupMenuItem(value: 'delete', child: Text('حذف')),
+                              ],
+                            ),
                           ),
                         );
                       },
