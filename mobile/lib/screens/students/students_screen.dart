@@ -2,30 +2,96 @@ import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
-class StudentsScreen extends StatefulWidget { const StudentsScreen({super.key}); @override State<StudentsScreen> createState()=>_StudentsScreenState(); }
-class _StudentsScreenState extends State<StudentsScreen>{
- List<dynamic> students=[]; List<String> subjects=[]; bool loading=true;
- static const fallbackSubjects=<String>['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
- List<dynamic> list(dynamic value){ if(value is List)return List<dynamic>.from(value); if(value is Map){final d=value['data']; if(d is List)return List<dynamic>.from(d); if(d is Map&&d['data'] is List)return List<dynamic>.from(d['data']);} return []; }
- int id(dynamic value)=>int.tryParse('${value['id']}')??0;
- String subjectName(dynamic value){if(value is String)return value;if(value is Map)return '${value['subject']??value['name']??''}';return '$value';}
- void msg(Object error)=>ScaffoldMessenger.of(context).showSnackBar(SnackBar(content:Text(error.toString().replaceFirst('Exception: ',''))));
- @override void initState(){super.initState();load();}
- Future<void> load()async{
-   if(mounted)setState(()=>loading=true);
-   Object? primaryError;
-   try{final result=await ApiService.get('students');if(mounted)setState(()=>students=list(result));}catch(e){primaryError=e;}
-   try{final result=await ApiService.get('subjects');final loaded=list(result).map(subjectName).where((x)=>x.trim().isNotEmpty).toSet().toList();if(mounted)setState(()=>subjects=loaded.isEmpty?fallbackSubjects:loaded);}catch(_){if(mounted)setState(()=>subjects=fallbackSubjects);}
-   if(mounted){setState(()=>loading=false);if(primaryError!=null)msg(primaryError!);}
- }
- Future<void> editForm({Map<String,dynamic>? existing})async{
-  final name=TextEditingController(text:'${existing?['name']??''}'),phone=TextEditingController(text:'${existing?['phone']??''}'),parent=TextEditingController(text:'${existing?['parent_name']??''}'),parentPhone=TextEditingController(text:'${existing?['parent_phone']??''}'),grade=TextEditingController(text:'${existing?['grade']??''}'),curriculum=TextEditingController(text:'${existing?['curriculum']??''}');
-  final selected=<String>{...list(existing?['subjects']).map(subjectName)};final formKey=GlobalKey<FormState>();
-  final saved=await showDialog<bool>(context:context,builder:(dialogContext)=>StatefulBuilder(builder:(context,setDialogState)=>AlertDialog(title:Text(existing==null?'إضافة طالب':'تعديل بيانات الطالب'),content:SizedBox(width:520,child:SingleChildScrollView(child:Form(key:formKey,child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[TextFormField(controller:name,decoration:const InputDecoration(labelText:'اسم الطالب *'),validator:(v)=>v==null||v.trim().isEmpty?'مطلوب':null),TextFormField(controller:phone,decoration:const InputDecoration(labelText:'هاتف الطالب')),TextFormField(controller:parent,decoration:const InputDecoration(labelText:'اسم ولي الأمر')),TextFormField(controller:parentPhone,decoration:const InputDecoration(labelText:'هاتف ولي الأمر')),TextFormField(controller:grade,decoration:const InputDecoration(labelText:'الصف')),TextFormField(controller:curriculum,decoration:const InputDecoration(labelText:'المنهج')),const SizedBox(height:14),const Text('المواد المشترك بها *',style:TextStyle(fontWeight:FontWeight.bold,fontSize:16)),const SizedBox(height:6),Container(decoration:BoxDecoration(border:Border.all(color:Colors.grey.shade300),borderRadius:BorderRadius.circular(8)),child:Column(children:subjects.map((subject)=>CheckboxListTile(dense:true,controlAffinity:ListTileControlAffinity.leading,value:selected.contains(subject),title:Text(subject),onChanged:(checked)=>setDialogState(()=>checked==true?selected.add(subject):selected.remove(subject))).toList()))])))),actions:[TextButton(onPressed:()=>Navigator.pop(dialogContext,false),child:const Text('إلغاء')),FilledButton(onPressed:(){if(formKey.currentState!.validate()&&selected.isNotEmpty){Navigator.pop(dialogContext,true);}else if(selected.isEmpty){ScaffoldMessenger.of(dialogContext).showSnackBar(const SnackBar(content:Text('اختر مادة واحدة على الأقل.')));}},child:Text(existing==null?'حفظ الطالب':'حفظ التعديل'))])));
-  if(saved==true){try{final body={'name':name.text.trim(),'phone':phone.text.trim(),'parent_name':parent.text.trim(),'parent_phone':parentPhone.text.trim(),'grade':grade.text.trim(),'curriculum':curriculum.text.trim(),'status':'active','subjects':selected.toList()};if(existing==null)await ApiService.post('students',body);else await ApiService.put('students/${id(existing)}',body);await load();}catch(e){msg(e);}}
-  for(final c in[name,phone,parent,parentPhone,grade,curriculum])c.dispose();
- }
- Future<void> remove(Map<String,dynamic> student)async{final confirmed=await showDialog<bool>(context:context,builder:(d)=>AlertDialog(title:const Text('حذف الطالب'),content:Text('هل تريد حذف «${student['name']??''}»؟'),actions:[TextButton(onPressed:()=>Navigator.pop(d,false),child:const Text('إلغاء')),FilledButton(onPressed:()=>Navigator.pop(d,true),child:const Text('حذف'))]));if(confirmed!=true)return;try{await ApiService.delete('students/${id(student)}');await load();}catch(e){msg(e);}}
- Future<void> details(int studentId)async{try{final response=await ApiService.get('students/$studentId');final data=Map<String,dynamic>.from(response['data'] is Map?response['data']:response);if(!mounted)return;final sections=<String,List<dynamic>>{'المواد':list(data['subjects']),'المدرسون':list(data['teachers']),'المجموعات':list(data['groups']),'الحصص':list(data['lessons']),'الاشتراكات':list(data['subscriptions']),'المدفوعات':list(data['payments'])};await showDialog<void>(context:context,builder:(d)=>AlertDialog(title:Text('${data['name']??'الطالب'}'),content:SizedBox(width:520,child:SingleChildScrollView(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:sections.entries.map((entry)=>Padding(padding:const EdgeInsets.only(bottom:12),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text(entry.key,style:const TextStyle(fontWeight:FontWeight.bold,fontSize:15)),if(entry.value.isEmpty)const Text('لا يوجد',style:TextStyle(color:Colors.grey)),...entry.value.map((item)=>Text('• ${item is Map?(item['name']??item['subject']??item['amount']??''):item}'))]))).toList())),actions:[TextButton(onPressed:()=>Navigator.pop(d),child:const Text('إغلاق'))]));}catch(e){msg(e);}}
- @override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('الطلاب'),actions:[IconButton(onPressed:load,icon:const Icon(Icons.refresh))]),floatingActionButton:FloatingActionButton.extended(onPressed:()=>editForm(),backgroundColor:AppColors.red,icon:const Icon(Icons.person_add),label:const Text('إضافة طالب')),body:loading?const Center(child:CircularProgressIndicator()):RefreshIndicator(onRefresh:load,child:students.isEmpty?ListView(children:const[SizedBox(height:180),Center(child:Text('لا يوجد طلاب بعد. اضغط «إضافة طالب» للبدء.'))]):ListView.builder(padding:const EdgeInsets.fromLTRB(16,12,16,90),itemCount:students.length,itemBuilder:(_,index){final student=Map<String,dynamic>.from(students[index]);return Card(child:ListTile(onTap:()=>details(id(student)),leading:const CircleAvatar(child:Icon(Icons.person)),title:Text('${student['name']??''}',style:const TextStyle(fontWeight:FontWeight.bold)),subtitle:Text('${student['phone']??''}'),trailing:PopupMenuButton<String>(onSelected:(value){if(value=='details')details(id(student));if(value=='edit')editForm(existing:student);if(value=='delete')remove(student);},itemBuilder:(_)=>const[PopupMenuItem(value:'details',child:Text('التفاصيل')),PopupMenuItem(value:'edit',child:Text('تعديل')),PopupMenuItem(value:'delete',child:Text('حذف'))])));}))));
+class StudentsScreen extends StatefulWidget {
+  const StudentsScreen({super.key});
+  @override State<StudentsScreen> createState() => _StudentsScreenState();
+}
+
+class _StudentsScreenState extends State<StudentsScreen> {
+  List<dynamic> students = [];
+  List<String> subjects = [];
+  bool loading = true;
+  static const fallback = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
+
+  List<dynamic> list(dynamic v) {
+    if (v is List) return List<dynamic>.from(v);
+    if (v is Map) {
+      final d = v['data'];
+      if (d is List) return List<dynamic>.from(d);
+      if (d is Map && d['data'] is List) return List<dynamic>.from(d['data']);
+    }
+    return [];
+  }
+  int id(dynamic v) => int.tryParse('${v['id']}') ?? 0;
+  String subjectName(dynamic v) => v is Map ? '${v['subject'] ?? v['name'] ?? ''}' : '$v';
+  void msg(Object e) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+
+  @override void initState() { super.initState(); load(); }
+  Future<void> load() async {
+    if (mounted) setState(() => loading = true);
+    Object? error;
+    try { final r = await ApiService.get('students'); if (mounted) setState(() => students = list(r)); } catch (e) { error = e; }
+    try { final r = await ApiService.get('subjects'); final s = list(r).map(subjectName).where((x) => x.trim().isNotEmpty).toSet().toList(); if (mounted) setState(() => subjects = s.isEmpty ? fallback : s); } catch (_) { if (mounted) setState(() => subjects = fallback); }
+    if (mounted) { setState(() => loading = false); if (error != null) msg(error!); }
+  }
+
+  Future<void> editForm({Map<String,dynamic>? existing}) async {
+    final name = TextEditingController(text: '${existing?['name'] ?? ''}');
+    final phone = TextEditingController(text: '${existing?['phone'] ?? ''}');
+    final parent = TextEditingController(text: '${existing?['parent_name'] ?? ''}');
+    final grade = TextEditingController(text: '${existing?['grade'] ?? ''}');
+    final selected = <String>{...list(existing?['subjects']).map(subjectName)};
+    final key = GlobalKey<FormState>();
+    final saved = await showDialog<bool>(context: context, builder: (dialogContext) => StatefulBuilder(builder: (context, setDialogState) => AlertDialog(
+      title: Text(existing == null ? 'إضافة طالب' : 'تعديل بيانات الطالب'),
+      content: SizedBox(width: 520, child: SingleChildScrollView(child: Form(key: key, child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        TextFormField(controller: name, decoration: const InputDecoration(labelText: 'اسم الطالب *'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
+        TextFormField(controller: phone, decoration: const InputDecoration(labelText: 'هاتف الطالب')),
+        TextFormField(controller: parent, decoration: const InputDecoration(labelText: 'اسم ولي الأمر')),
+        TextFormField(controller: grade, decoration: const InputDecoration(labelText: 'الصف')),
+        const SizedBox(height: 12), const Text('المواد المشترك بها', style: TextStyle(fontWeight: FontWeight.bold)),
+        ...subjects.map((s) => CheckboxListTile(dense: true, value: selected.contains(s), title: Text(s), onChanged: (v) => setDialogState(() { if (v == true) { selected.add(s); } else { selected.remove(s); } }))),
+      ]))),
+      actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')), FilledButton(onPressed: () { if (key.currentState!.validate()) Navigator.pop(dialogContext, true); }, child: const Text('حفظ'))],
+    )));
+    if (saved == true) {
+      try {
+        final body = {'name': name.text.trim(), 'phone': phone.text.trim(), 'parent_name': parent.text.trim(), 'grade': grade.text.trim(), 'status': 'active', 'subjects': selected.toList()};
+        if (existing == null) { await ApiService.post('students', body); } else { await ApiService.put('students/${id(existing)}', body); }
+        await load();
+      } catch (e) { msg(e); }
+    }
+    for (final c in [name,phone,parent,grade]) c.dispose();
+  }
+
+  Future<void> details(int studentId) async {
+    try {
+      final r = await ApiService.get('students/$studentId');
+      final d = Map<String,dynamic>.from(r is Map && r['data'] is Map ? r['data'] : r);
+      if (!mounted) return;
+      final lines = <Widget>[];
+      for (final entry in {'المواد':d['subjects'],'المدرسون':d['teachers'],'المجموعات':d['groups'],'الحصص':d['lessons'],'الاشتراكات':d['subscriptions'],'المدفوعات':d['payments']}.entries) {
+        final values = list(entry.value);
+        lines.add(Text(entry.key, style: const TextStyle(fontWeight: FontWeight.bold)));
+        if (values.isEmpty) lines.add(const Text('لا يوجد', style: TextStyle(color: Colors.grey)));
+        for (final v in values) lines.add(Text('• ${v is Map ? (v['name'] ?? v['subject'] ?? v['amount'] ?? '') : v}'));
+        lines.add(const SizedBox(height: 10));
+      }
+      await showDialog(context: context, builder: (d) => AlertDialog(title: Text('${d['name'] ?? 'الطالب'}'), content: SizedBox(width: 520, child: SingleChildScrollView(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: lines))), actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('إغلاق'))]));
+    } catch (e) { msg(e); }
+  }
+
+  Future<void> remove(Map<String,dynamic> student) async {
+    final ok = await showDialog<bool>(context: context, builder: (d) => AlertDialog(title: const Text('حذف الطالب'), content: Text('حذف ${student['name'] ?? ''}؟'), actions: [TextButton(onPressed: () => Navigator.pop(d,false), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(d,true), child: const Text('حذف'))]));
+    if (ok == true) { try { await ApiService.delete('students/${id(student)}'); await load(); } catch (e) { msg(e); } }
+  }
+
+  @override Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('الطلاب'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
+    floatingActionButton: FloatingActionButton.extended(onPressed: () => editForm(), backgroundColor: AppColors.red, icon: const Icon(Icons.person_add), label: const Text('إضافة طالب')),
+    body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(onRefresh: load, child: students.isEmpty ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا يوجد طلاب بعد.'))]) : ListView.builder(padding: const EdgeInsets.fromLTRB(16,12,16,90), itemCount: students.length, itemBuilder: (_, i) {
+      final s = Map<String,dynamic>.from(students[i]);
+      return Card(child: ListTile(onTap: () => details(id(s)), leading: const CircleAvatar(child: Icon(Icons.person)), title: Text('${s['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text('${s['phone'] ?? ''}'), trailing: PopupMenuButton<String>(onSelected: (v) { if (v == 'edit') editForm(existing: s); if (v == 'delete') remove(s); if (v == 'details') details(id(s)); }, itemBuilder: (_) => const [PopupMenuItem(value:'details', child: Text('التفاصيل')), PopupMenuItem(value:'edit', child: Text('تعديل')), PopupMenuItem(value:'delete', child: Text('حذف'))])));
+    })),
+  );
 }
