@@ -8,10 +8,10 @@ use App\Http\Controllers\TeacherAssignmentController;
 use App\Http\Controllers\ManagementCrudController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\AcademicTrackingController;
-Route::get('/health',fn()=>['status'=>'ok','service'=>'osa-api','version'=>'1.6']);Route::post('/login',[ApiController::class,'login']);
+Route::get('/health',fn()=>['status'=>'ok','service'=>'osa-api','version'=>'1.7']);Route::post('/login',[ApiController::class,'login']);
 Route::middleware('auth:sanctum')->group(function(){
  Route::get('/user',fn()=>request()->user());Route::post('/logout',[ApiController::class,'logout']);Route::get('/dashboard',[ApiController::class,'dashboard']);Route::get('/subjects',[ApiController::class,'subjects']);
- Route::middleware('admin')->group(function(){Route::get('/users',[UserController::class,'index']);Route::put('/users/{user}/permissions',[UserController::class,'updatePermissions']);});
+ Route::middleware('admin')->group(function(){Route::get('/users',[UserController::class,'index']);Route::post('/users',[UserController::class,'store']);Route::put('/users/{user}',[UserController::class,'update']);Route::delete('/users/{user}',[UserController::class,'destroy']);Route::put('/users/{user}/permissions',[UserController::class,'updatePermissions']);});
  Route::middleware('permission:view_students')->group(function(){Route::get('/students',[ApiController::class,'index']);Route::get('/students/{student}',[ApiController::class,'show']);});
  Route::middleware('permission:manage_students')->group(function(){Route::post('/students',[ApiController::class,'store']);Route::put('/students/{student}',[ApiController::class,'update']);Route::patch('/students/{student}',[ApiController::class,'update']);Route::delete('/students/{student}',[ApiController::class,'destroy']);});
  Route::middleware('permission:view_teachers')->group(function(){Route::get('/teachers',[ApiController::class,'teachers']);Route::get('/teachers/{teacher}',[ApiController::class,'teacherDetails']);});
