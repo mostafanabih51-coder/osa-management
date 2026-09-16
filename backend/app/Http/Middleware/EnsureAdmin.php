@@ -11,7 +11,7 @@ class EnsureAdmin
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        if (!$user || !in_array($user->role, ['admin', 'super_admin', 'owner'], true)) {
+        if (!$user || !in_array($user->role, ['admin', 'super_admin', 'owner', 'technical_admin'], true)) {
             return response()->json(['message' => 'غير مصرح لك بالوصول إلى هذه البيانات.'], 403);
         }
         return $next($request);
