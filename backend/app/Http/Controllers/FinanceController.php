@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 use App\Models\Bonus; use App\Models\Expense; use App\Models\SupervisorDue; use App\Models\TeacherLessonDue; use App\Models\WithdrawalRequest; use App\Models\WithdrawalSetting; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule;
-class FinanceController{
+class FinanceController extends Controller{
 public function teacherDues(Request $r){$q=TeacherLessonDue::with(['teacher','lesson'])->latest();if($r->filled('teacher_id'))$q->where('teacher_id',$r->integer('teacher_id'));if($r->filled('status'))$q->where('status',$r->string('status'));return response()->json(['success'=>true,'data'=>$q->get()]);}
 public function supervisorDues(Request $r){$q=SupervisorDue::with(['supervisor','lesson'])->latest();if($r->filled('supervisor_id'))$q->where('supervisor_id',$r->integer('supervisor_id'));if($r->filled('status'))$q->where('status',$r->string('status'));return response()->json(['success'=>true,'data'=>$q->get()]);}
 public function bonuses(Request $r){$q=Bonus::latest();if($r->filled('recipient_type'))$q->where('recipient_type',$r->string('recipient_type'));if($r->filled('recipient_id'))$q->where('recipient_id',$r->integer('recipient_id'));return response()->json(['success'=>true,'data'=>$q->get()]);}
