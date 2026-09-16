@@ -1,16 +1,30 @@
 import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
-class GroupsScreen extends StatefulWidget { const GroupsScreen({super.key}); @override State<GroupsScreen> createState() => _GroupsScreenState(); }
+class GroupsScreen extends StatefulWidget {
+  const GroupsScreen({super.key});
+  @override State<GroupsScreen> createState() => _GroupsScreenState();
+}
+
 class _GroupsScreenState extends State<GroupsScreen> {
   List<dynamic> groups = [], students = [], teachers = [];
   List<String> subjects = [];
   bool loading = true;
   static const fallback = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
-  List<dynamic> list(dynamic v) { if (v is List) return List<dynamic>.from(v); if (v is Map) { final d = v['data']; if (d is List) return List<dynamic>.from(d); if (d is Map && d['data'] is List) return List<dynamic>.from(d['data']); } return []; }
+
+  List<dynamic> list(dynamic v) {
+    if (v is List) return List<dynamic>.from(v);
+    if (v is Map) {
+      final d = v['data'];
+      if (d is List) return List<dynamic>.from(d);
+      if (d is Map && d['data'] is List) return List<dynamic>.from(d['data']);
+    }
+    return [];
+  }
   int id(dynamic v) => int.tryParse('${v['id']}') ?? 0;
   String sub(dynamic v) => v is Map ? '${v['subject'] ?? v['name'] ?? ''}' : '$v';
   void msg(Object e) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+
   @override void initState() { super.initState(); load(); }
 
   Future<void> load() async {
@@ -41,44 +55,132 @@ class _GroupsScreenState extends State<GroupsScreen> {
             return CheckboxListTile(
               value: selected.contains(sid),
               title: Text('${s['name']}'),
-              onChanged: (value) => setDialogState(() { if (value == true) { selected.add(sid); } else { selected.remove(sid); } }),
+              onChanged: (value) => setDialogState(() {
+                if (value == true) {
+                  selected.add(sid);
+                } else {
+                  selected.remove(sid);
+                }
+              }),
             );
           }).toList();
           return AlertDialog(
             title: const Text('إنشاء مجموعة'),
-            content: SizedBox(width: 500, child: SingleChildScrollView(child: Form(
-              key: formKey,
-              child: Column(children: [
-                TextFormField(controller: name, decoration: const InputDecoration(labelText: 'اسم المجموعة *'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
-                DropdownButtonFormField<int>(value: teacherId, decoration: const InputDecoration(labelText: 'المدرس'), items: teachers.map((t) => DropdownMenuItem(value: id(t), child: Text('${t['name']}'))).toList(), onChanged: (v) { if (v != null) setDialogState(() => teacherId = v); }),
-                DropdownButtonFormField<String>(value: subject, decoration: const InputDecoration(labelText: 'المادة'), items: (subjects.isEmpty ? fallback : subjects).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v != null) setDialogState(() => subject = v); }),
-                TextFormField(controller: rate, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'سعر الحصة *'), validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل السعر' : null),
-                const SizedBox(height: 8),
-                const Align(alignment: Alignment.centerRight, child: Text('الطلاب', style: TextStyle(fontWeight: FontWeight.bold))),
-                ...studentTiles,
-              ]),
-            ))),
+            content: SizedBox(
+              width: 500,
+              child: SingleChildScrollView(
+                child: Form(
+                  key: formKey,
+                  child: Column(
+                    children: [
+                      TextFormField(
+                        controller: name,
+                        decoration: const InputDecoration(labelText: 'اسم المجموعة *'),
+                        validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null,
+                      ),
+                      DropdownButtonFormField<int>(
+                        value: teacherId,
+                        decoration: const InputDecoration(labelText: 'المدرس'),
+                        items: teachers.map((t) => DropdownMenuItem(value: id(t), child: Text('${t['name']}'))).toList(),
+                        onChanged: (v) { if (v != null) setDialogState(() => teacherId = v); },
+                      ),
+                      DropdownButtonFormField<String>(
+                        value: subject,
+                        decoration: const InputDecoration(labelText: 'المادة'),
+                        items: (subjects.isEmpty ? fallback : subjects).map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                        onChanged: (v) { if (v != null) setDialogState(() => subject = v); },
+                      ),
+                      TextFormField(
+                        controller: rate,
+                        keyboardType: TextInputType.number,
+                        decoration: const InputDecoration(labelText: 'سعر الحصة *'),
+                        validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل السعر' : null,
+                      ),
+                      const SizedBox(height: 8),
+                      const Align(alignment: Alignment.centerRight, child: Text('الطلاب', style: TextStyle(fontWeight: FontWeight.bold))),
+                      ...studentTiles,
+                    ],
+                  ),
+                ),
+              ),
+            ),
             actions: [
               TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
-              FilledButton(onPressed: () { if (formKey.currentState!.validate() && selected.isNotEmpty) Navigator.pop(dialogContext, true); }, child: const Text('حفظ')),
+              FilledButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate() && selected.isNotEmpty) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
+                child: const Text('حفظ'),
+              ),
             ],
           );
         },
       ),
     );
     if (ok == true) {
-      try { await ApiService.post('groups', {'name': name.text.trim(), 'subject': subject, 'teacher_id': teacherId, 'teacher_rate': double.parse(rate.text), 'student_ids': selected.toList(), 'status': 'active'}); await load(); } catch (e) { msg(e); }
+      try {
+        await ApiService.post('groups', {
+          'name': name.text.trim(),
+          'subject': subject,
+          'teacher_id': teacherId,
+          'teacher_rate': double.parse(rate.text),
+          'student_ids': selected.toList(),
+          'status': 'active',
+        });
+        await load();
+      } catch (e) { msg(e); }
     }
-    name.dispose(); rate.dispose();
+    name.dispose();
+    rate.dispose();
   }
 
   Future<void> remove(dynamic group) async {
-    final ok = await showDialog<bool>(context: context, builder: (dialogContext) => AlertDialog(title: const Text('حذف المجموعة'), content: Text('حذف ${group['name'] ?? ''}؟'), actions: [TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')), FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف'))]));
-    if (ok == true) { try { await ApiService.delete('groups/${id(group)}'); await load(); } catch (e) { msg(e); } }
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('حذف المجموعة'),
+        content: Text('حذف ${group['name'] ?? ''}؟'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('إلغاء')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('حذف')),
+        ],
+      ),
+    );
+    if (ok == true) {
+      try { await ApiService.delete('groups/${id(group)}'); await load(); } catch (e) { msg(e); }
+    }
   }
 
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('المجموعات'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
-    floatingActionButton: FloatingActionButton.extended(onPressed: form, icon: const Icon(Icons.groups), label: const Text('إنشاء مجموعة')),
-    body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(onRefresh: load, child: groups.isEmpty ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا توجد مجموعات بعد.'))]) : ListView.builder(padding: const EdgeInsets.fromLTRB(16, 12, 16, 90), itemCount: groups.length, itemBuilder: (_, i) { final g = Map<String, dynamic>.from(groups[i]); return Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.groups)), title: Text('${g['name'] ?? ''}'), subtitle: Text('المدرس: ${g['teacher']?['name'] ?? ''}\nالمادة: ${g['subject'] ?? ''} • الطلاب: ${g['students_count'] ?? 0}'), isThreeLine: true, trailing: IconButton(onPressed: () => remove(g), icon: const Icon(Icons.delete)))); }))));
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('المجموعات'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
+      floatingActionButton: FloatingActionButton.extended(onPressed: form, icon: const Icon(Icons.groups), label: const Text('إنشاء مجموعة')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: groups.isEmpty
+                  ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا توجد مجموعات بعد.'))])
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+                      itemCount: groups.length,
+                      itemBuilder: (context, index) {
+                        final g = Map<String, dynamic>.from(groups[index]);
+                        return Card(
+                          child: ListTile(
+                            leading: const CircleAvatar(child: Icon(Icons.groups)),
+                            title: Text('${g['name'] ?? ''}'),
+                            subtitle: Text('المدرس: ${g['teacher']?['name'] ?? ''}\nالمادة: ${g['subject'] ?? ''} • الطلاب: ${g['students_count'] ?? 0}'),
+                            isThreeLine: true,
+                            trailing: IconButton(onPressed: () => remove(g), icon: const Icon(Icons.delete)),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+    );
+  }
 }
