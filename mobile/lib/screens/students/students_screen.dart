@@ -112,9 +112,45 @@ class _StudentsScreenState extends State<StudentsScreen> {
     if (ok == true) { try { await ApiService.delete('students/${id(student)}'); await load(); } catch (e) { msg(e); } }
   }
 
-  @override Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('الطلاب'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
-    floatingActionButton: FloatingActionButton.extended(onPressed: () => editForm(), backgroundColor: AppColors.red, icon: const Icon(Icons.person_add), label: const Text('إضافة طالب')),
-    body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(onRefresh: load, child: students.isEmpty ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا يوجد طلاب بعد.'))]) : ListView.builder(padding: const EdgeInsets.fromLTRB(16, 12, 16, 90), itemCount: students.length, itemBuilder: (_, i) { final s = Map<String, dynamic>.from(students[i]); return Card(child: ListTile(onTap: () => details(id(s)), leading: const CircleAvatar(child: Icon(Icons.person)), title: Text('${s['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)), subtitle: Text('${s['phone'] ?? ''}'), trailing: PopupMenuButton<String>(onSelected: (v) { if (v == 'details') details(id(s)); if (v == 'edit') editForm(existing: s); if (v == 'delete') remove(s); }, itemBuilder: (_) => const [PopupMenuItem(value: 'details', child: Text('التفاصيل')), PopupMenuItem(value: 'edit', child: Text('تعديل')), PopupMenuItem(value: 'delete', child: Text('حذف'))])); })),
-  );
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('الطلاب'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
+      floatingActionButton: FloatingActionButton.extended(onPressed: () => editForm(), backgroundColor: AppColors.red, icon: const Icon(Icons.person_add), label: const Text('إضافة طالب')),
+      body: loading
+          ? const Center(child: CircularProgressIndicator())
+          : RefreshIndicator(
+              onRefresh: load,
+              child: students.isEmpty
+                  ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا يوجد طلاب بعد.'))])
+                  : ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
+                      itemCount: students.length,
+                      itemBuilder: (context, index) {
+                        final s = Map<String, dynamic>.from(students[index]);
+                        return Card(
+                          child: ListTile(
+                            onTap: () => details(id(s)),
+                            leading: const CircleAvatar(child: Icon(Icons.person)),
+                            title: Text('${s['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                            subtitle: Text('${s['phone'] ?? ''}'),
+                            trailing: PopupMenuButton<String>(
+                              onSelected: (v) {
+                                if (v == 'details') details(id(s));
+                                if (v == 'edit') editForm(existing: s);
+                                if (v == 'delete') remove(s);
+                              },
+                              itemBuilder: (context) => const [
+                                PopupMenuItem(value: 'details', child: Text('التفاصيل')),
+                                PopupMenuItem(value: 'edit', child: Text('تعديل')),
+                                PopupMenuItem(value: 'delete', child: Text('حذف')),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+    );
+  }
 }
