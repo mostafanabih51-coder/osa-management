@@ -4,9 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class UserController extends Controller
 {
+    private const ROLES = ['owner', 'admin', 'technical_admin', 'supervisor', 'teacher', 'staff'];
+
     private const PERMISSIONS = [
         'view_students', 'manage_students',
         'view_teachers', 'manage_teachers',
@@ -28,7 +31,90 @@ class UserController extends Controller
                 ->select(['id', 'name', 'email', 'role', 'permissions'])
                 ->orderBy('id')
                 ->get(),
+            'roles' => self::ROLES,
+            'permissions' => self::PERMISSIONS,
         ]);
+    }
+
+    public function store(Request $request)
+    {
+        $this->ensureAdmin($request);
+
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8'],
+            'role' => ['required', Rule::in(self::ROLES)],
+            'permissions' => ['nullable', 'array'],
+            'permissions.*' => ['string', Rule::in(self::PERMISSIONS)],
+        ]);
+
+        $role = $validated['role'];
+        $permissions = array_values(array_unique($validated['permissions'] ?? []));
+
+        // Owner/admin keep full administrative access. Technical Admin is intentionally
+        // permission-based so sensitive finance access is not granted by default.
+        if (in_array($role, ['owner', 'admin'], true)) {
+            $permissions = self::PERMISSIONS;
+        }
+
+        $user = User::create([
+            'name' => $validated['name'],
+            'email' => $validated['email'],
+            'password' => $validated['password'],
+            'role' => $role,
+            'permissions' => $permissions,
+        ]);
+
+        return response()->json([
+            'message' => 'تم إنشاء المستخدم بنجاح.',
+            'data' => $user->only(['id', 'name', 'email', 'role', 'permissions']),
+        ], 201);
+    }
+
+    public function update(Request $request, User $user)
+    {
+        $this->ensureAdmin($request);
+
+        if (in_array($user->role, ['owner', 'admin'], true) && $user->id !== $request->user()->id) {
+            return response()->json(['message' => 'لا يمكن تعديل حساب Owner/Admin من حساب إداري آخر.'], 403);
+        }
+
+        $validated = $request->validate([
+            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'email' => ['sometimes', 'required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => ['sometimes', 'nullable', 'string', 'min:8'],
+            'role' => ['sometimes', Rule::in(self::ROLES)],
+        ]);
+
+        if (array_key_exists('password', $validated) && $validated['password'] === null) {
+            unset($validated['password']);
+        }
+
+        $user->fill($validated);
+        if (in_array($user->role, ['owner', 'admin'], true)) {
+            $user->permissions = self::PERMISSIONS;
+        }
+        $user->save();
+
+        return response()->json([
+            'message' => 'تم تحديث المستخدم بنجاح.',
+            'data' => $user->only(['id', 'name', 'email', 'role', 'permissions']),
+        ]);
+    }
+
+    public function destroy(Request $request, User $user)
+    {
+        $this->ensureAdmin($request);
+
+        if ($user->id === $request->user()->id || in_array($user->role, ['owner', 'admin'], true)) {
+            return response()->json(['message' => 'لا يمكن حذف حساب Owner/Admin من هنا.'], 403);
+        }
+
+        $user->tokens()->delete();
+        $user->delete();
+
+        return response()->json(['message' => 'تم حذف المستخدم بنجاح.']);
     }
 
     public function updatePermissions(Request $request, User $user)
@@ -41,7 +127,7 @@ class UserController extends Controller
 
         $validated = $request->validate([
             'permissions' => ['required', 'array'],
-            'permissions.*' => ['string', 'in:' . implode(',', self::PERMISSIONS)],
+            'permissions.*' => ['string', Rule::in(self::PERMISSIONS)],
         ]);
 
         $user->permissions = array_values(array_unique($validated['permissions']));
