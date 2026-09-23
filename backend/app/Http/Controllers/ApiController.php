@@ -41,7 +41,7 @@ class ApiController extends Controller
 
     public function subjects()
     {
-        $defaults = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
+        $defaults = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran','Chemistry','Physics','Biology','History','Geography','Philosophy'];
         $stored = collect()
             ->merge(StudentSubject::query()->pluck('subject'))
             ->merge(Subscription::query()->pluck('subject'))
