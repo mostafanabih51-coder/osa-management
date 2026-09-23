@@ -241,6 +241,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
       final linked = list(data['students']);
       final assignments = list(data['assignments']);
       final lessons = list(data['lessons']);
+      final privateLessons = list(data['private_lessons']);
+      final groupLessons = list(data['group_lessons']);
       List<dynamic> resources = [];
       try { resources = list(await ApiService.get('academic/resources?teacher_id=$teacherId')); } catch (_) {}
       if (!mounted) return;
@@ -265,7 +267,15 @@ class _TeachersScreenState extends State<TeachersScreen> {
                   subtitle: Text(s['pivot'] is Map ? '${s['pivot']['subject'] ?? ''} • سعر ${s['pivot']['teacher_rate'] ?? 0}' : ''),
                 )),
                 const Divider(),
-                Text('الحصص (${lessons.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text('Private (${privateLessons.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (privateLessons.isEmpty) const Text('لا توجد حصص Private.'),
+                ...privateLessons.take(20).map((l) => Text('• ${l['student']?['name'] ?? 'طالب'} — ${l['subject'] ?? ''} — ${l['starts_at'] ?? ''}')),
+                const Divider(),
+                Text('Groups (${groupLessons.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
+                if (groupLessons.isEmpty) const Text('لا توجد حصص Groups.'),
+                ...groupLessons.take(20).map((l) => Text('• ${l['group']?['name'] ?? 'مجموعة'} — ${l['subject'] ?? ''} — ${l['starts_at'] ?? ''}')),
+                const Divider(),
+                Text('كل الحصص (${lessons.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
                 if (lessons.isEmpty) const Text('لا توجد حصص مسجلة.'),
                 ...lessons.take(20).map((l) => Text('• ${l['subject'] ?? ''} — ${l['starts_at'] ?? ''} — ${l['status'] ?? ''}')),
                 const Divider(),
