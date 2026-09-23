@@ -26,6 +26,7 @@ class SubscriptionEnhancementController extends Controller
         if ($data['service_type'] === 'private') {
             $data['billing_type'] = 'per_lesson';
             $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
+            $data['amount'] = $data['lesson_price'];
             $data['lesson_count'] = null;
         } else {
             $data['billing_type'] = 'monthly';
