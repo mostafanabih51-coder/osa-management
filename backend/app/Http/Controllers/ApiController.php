@@ -193,6 +193,9 @@ class ApiController extends Controller
         ]);
         $studentIds = $data['student_ids'] ?? [];
         unset($data['student_ids']);
+        $invalid = StudentSubject::whereIn('student_id', $studentIds)->where('subject', $data['subject'])->pluck('student_id')->unique();
+        $missing = array_values(array_diff($studentIds, $invalid->all()));
+        if ($missing) return response()->json(['success'=>false,'message'=>'كل طالب في المجموعة يجب أن يكون مشتركًا في مادة المجموعة.','student_ids'=>$missing],422);
         $group = DB::transaction(function () use ($data, $studentIds) { $group=Group::create($data); if($studentIds)$group->students()->sync($studentIds); return $group; });
         return response()->json(['success'=>true,'data'=>$group->load(['students:id,name','teacher:id,name','supervisor:id,name'])],201);
     }
@@ -202,12 +205,24 @@ class ApiController extends Controller
         $data = $request->validate([
             'name'=>'sometimes|required|string|max:255','grade'=>'nullable|string|max:100','subject'=>'required|string|max:100','teacher_id'=>'required|exists:teachers,id','supervisor_id'=>'nullable|exists:supervisors,id','teacher_rate'=>'required|numeric|min:0','status'=>'nullable|string|max:50','notes'=>'nullable|string','student_ids'=>'nullable|array','student_ids.*'=>'integer|exists:students,id'
         ]);
-        DB::transaction(function () use ($group,$data) { $studentIds=$data['student_ids'] ?? null; unset($data['student_ids']); $group->update($data); if($studentIds!==null)$group->students()->sync($studentIds); });
+        $studentIds=$data['student_ids'] ?? null;
+        if ($studentIds !== null) {
+            $invalid = StudentSubject::whereIn('student_id', $studentIds)->where('subject', $data['subject'])->pluck('student_id')->unique();
+            $missing = array_values(array_diff($studentIds, $invalid->all()));
+            if ($missing) return response()->json(['success'=>false,'message'=>'كل طالب في المجموعة يجب أن يكون مشتركًا في مادة المجموعة.','student_ids'=>$missing],422);
+        }
+        DB::transaction(function () use ($group,$data,$studentIds) { unset($data['student_ids']); $group->update($data); if($studentIds!==null)$group->students()->sync($studentIds); });
         return response()->json(['success'=>true,'data'=>$group->fresh()->load(['students:id,name','teacher:id,name','supervisor:id,name'])]);
     }
 
     public function destroyGroup(Group $group) { $group->delete(); return response()->json(['success'=>true,'message'=>'تم حذف المجموعة']); }
-    public function addStudentToGroup(Request $request, Group $group) { $data=$request->validate(['student_id'=>'required|integer|exists:students,id']); $group->students()->syncWithoutDetaching([$data['student_id']]); return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]); }
+    public function addStudentToGroup(Request $request, Group $group) {
+        $data=$request->validate(['student_id'=>'required|integer|exists:students,id']);
+        if (!StudentSubject::where('student_id',$data['student_id'])->where('subject',$group->subject)->exists())
+            return response()->json(['success'=>false,'message'=>'الطالب غير مشترك في مادة المجموعة.'],422);
+        $group->students()->syncWithoutDetaching([$data['student_id']]);
+        return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]);
+    }
     public function removeStudentFromGroup(Group $group, Student $student) { $group->students()->detach($student->id); return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]); }
 
     public function schedules(Request $request)
