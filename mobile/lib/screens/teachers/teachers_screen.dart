@@ -149,7 +149,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
     int studentId = id(available.first);
     String subject = studentSubjects(available.first).first;
     int? supervisorId;
-    final rate = TextEditingController();
+    final grossPrice = TextEditingController();
     final percentage = TextEditingController(text: '0');
 
     List<dynamic> candidates() => students.where((s) => studentSubjects(s).contains(subject)).toList();
@@ -186,7 +186,8 @@ class _TeachersScreenState extends State<TeachersScreen> {
                   onChanged: (v) { if (v != null) set(() => studentId = v); },
                   decoration: const InputDecoration(labelText: 'الطالب'),
                 ),
-                TextField(controller: rate, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'سعر المدرس للحصة *')),
+                TextField(controller: grossPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'سعر الحصة للطالب *'), onChanged: (_) => setState(() {})),
+                Builder(builder: (_) { final gross = double.tryParse(grossPrice.text) ?? 0; final pct = double.tryParse(percentage.text) ?? 0; final net = gross * (1 - pct / 100); return Padding(padding: const EdgeInsets.only(top: 8), child: Align(alignment: Alignment.centerRight, child: Text('مستحق المدرس: ${net.toStringAsFixed(2)} • نصيب الأكاديمية: ${(gross - net).toStringAsFixed(2)}'))); }),
                 TextField(controller: percentage, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'نسبة الأكاديمية %')),
                 DropdownButtonFormField<int?>(
                   value: supervisorId,
@@ -203,10 +204,10 @@ class _TeachersScreenState extends State<TeachersScreen> {
               TextButton(onPressed: () => Navigator.pop(d, false), child: const Text('إلغاء')),
               FilledButton(
                 onPressed: () {
-                  if (studentId > 0 && double.tryParse(rate.text) != null) {
+                  if (studentId > 0 && double.tryParse(grossPrice.text) != null) {
                     Navigator.pop(d, true);
                   } else {
-                    msg('اختر طالبًا وأدخل سعر المدرس.');
+                    msg('اختر طالبًا وأدخل سعر الحصة للطالب.');
                   }
                 },
                 child: const Text('حفظ'),
@@ -221,7 +222,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
       try {
         await ApiService.post('teacher-assignments', {
           'teacher_id': id(teacher), 'student_id': studentId, 'subject': subject,
-          'teacher_rate': double.parse(rate.text),
+          'lesson_price': double.parse(grossPrice.text),
           'academy_percentage': double.tryParse(percentage.text) ?? 0,
           'supervisor_id': supervisorId, 'status': 'active',
         });
@@ -229,7 +230,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
         msg('تم ربط الطالب بالمدرس والمادة والسعر.');
       } catch (e) { msg(e); }
     }
-    rate.dispose();
+    grossPrice.dispose();
     percentage.dispose();
   }
 
@@ -264,7 +265,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                   dense: true,
                   contentPadding: EdgeInsets.zero,
                   title: Text('${s['name'] ?? ''}'),
-                  subtitle: Text(s['pivot'] is Map ? '${s['pivot']['subject'] ?? ''} • سعر ${s['pivot']['teacher_rate'] ?? 0}' : ''),
+                  subtitle: Text(s['pivot'] is Map ? '${s['pivot']['subject'] ?? ''} • سعر الطالب ${s['pivot']['lesson_price'] ?? 0} • مستحق المدرس ${s['pivot']['teacher_rate'] ?? 0}' : ''),
                 )),
                 const Divider(),
                 Text('Private (${privateLessons.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
