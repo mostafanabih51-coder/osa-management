@@ -186,9 +186,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
                   onChanged: (v) { if (v != null) set(() => studentId = v); },
                   decoration: const InputDecoration(labelText: 'الطالب'),
                 ),
-                TextField(controller: grossPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'سعر الحصة للطالب *'), onChanged: (_) => setState(() {})),
+                TextField(controller: grossPrice, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'سعر الحصة للطالب *'), onChanged: (_) => set(() {})),
                 Builder(builder: (_) { final gross = double.tryParse(grossPrice.text) ?? 0; final pct = double.tryParse(percentage.text) ?? 0; final net = gross * (1 - pct / 100); return Padding(padding: const EdgeInsets.only(top: 8), child: Align(alignment: Alignment.centerRight, child: Text('مستحق المدرس: ${net.toStringAsFixed(2)} • نصيب الأكاديمية: ${(gross - net).toStringAsFixed(2)}'))); }),
-                TextField(controller: percentage, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'نسبة الأكاديمية %')),
+                TextField(controller: percentage, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'نسبة الأكاديمية %'), onChanged: (_) => set(() {})),
                 DropdownButtonFormField<int?>(
                   value: supervisorId,
                   items: <DropdownMenuItem<int?>>[
