@@ -29,6 +29,9 @@ class ApiController extends Controller
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
             'today_classes' => Schedule::whereDate('starts_at', now())->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'cancelled'))->count(),
+            'students_without_month_payment' => Student::where('status', 'active')
+                ->whereDoesntHave('payments', fn($q) => $q->whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()]))
+                ->count(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
@@ -41,7 +44,7 @@ class ApiController extends Controller
 
     public function subjects()
     {
-        $defaults = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
+        $defaults = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran','Chemistry','Physics','Biology','History','Geography','Philosophy'];
         $stored = collect()
             ->merge(StudentSubject::query()->pluck('subject'))
             ->merge(Subscription::query()->pluck('subject'))
@@ -193,6 +196,9 @@ class ApiController extends Controller
         ]);
         $studentIds = $data['student_ids'] ?? [];
         unset($data['student_ids']);
+        $invalid = StudentSubject::whereIn('student_id', $studentIds)->where('subject', $data['subject'])->pluck('student_id')->unique();
+        $missing = array_values(array_diff($studentIds, $invalid->all()));
+        if ($missing) return response()->json(['success'=>false,'message'=>'كل طالب في المجموعة يجب أن يكون مشتركًا في مادة المجموعة.','student_ids'=>$missing],422);
         $group = DB::transaction(function () use ($data, $studentIds) { $group=Group::create($data); if($studentIds)$group->students()->sync($studentIds); return $group; });
         return response()->json(['success'=>true,'data'=>$group->load(['students:id,name','teacher:id,name','supervisor:id,name'])],201);
     }
@@ -202,12 +208,24 @@ class ApiController extends Controller
         $data = $request->validate([
             'name'=>'sometimes|required|string|max:255','grade'=>'nullable|string|max:100','subject'=>'required|string|max:100','teacher_id'=>'required|exists:teachers,id','supervisor_id'=>'nullable|exists:supervisors,id','teacher_rate'=>'required|numeric|min:0','status'=>'nullable|string|max:50','notes'=>'nullable|string','student_ids'=>'nullable|array','student_ids.*'=>'integer|exists:students,id'
         ]);
-        DB::transaction(function () use ($group,$data) { $studentIds=$data['student_ids'] ?? null; unset($data['student_ids']); $group->update($data); if($studentIds!==null)$group->students()->sync($studentIds); });
+        $studentIds=$data['student_ids'] ?? null;
+        if ($studentIds !== null) {
+            $invalid = StudentSubject::whereIn('student_id', $studentIds)->where('subject', $data['subject'])->pluck('student_id')->unique();
+            $missing = array_values(array_diff($studentIds, $invalid->all()));
+            if ($missing) return response()->json(['success'=>false,'message'=>'كل طالب في المجموعة يجب أن يكون مشتركًا في مادة المجموعة.','student_ids'=>$missing],422);
+        }
+        DB::transaction(function () use ($group,$data,$studentIds) { unset($data['student_ids']); $group->update($data); if($studentIds!==null)$group->students()->sync($studentIds); });
         return response()->json(['success'=>true,'data'=>$group->fresh()->load(['students:id,name','teacher:id,name','supervisor:id,name'])]);
     }
 
     public function destroyGroup(Group $group) { $group->delete(); return response()->json(['success'=>true,'message'=>'تم حذف المجموعة']); }
-    public function addStudentToGroup(Request $request, Group $group) { $data=$request->validate(['student_id'=>'required|integer|exists:students,id']); $group->students()->syncWithoutDetaching([$data['student_id']]); return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]); }
+    public function addStudentToGroup(Request $request, Group $group) {
+        $data=$request->validate(['student_id'=>'required|integer|exists:students,id']);
+        if (!StudentSubject::where('student_id',$data['student_id'])->where('subject',$group->subject)->exists())
+            return response()->json(['success'=>false,'message'=>'الطالب غير مشترك في مادة المجموعة.'],422);
+        $group->students()->syncWithoutDetaching([$data['student_id']]);
+        return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]);
+    }
     public function removeStudentFromGroup(Group $group, Student $student) { $group->students()->detach($student->id); return response()->json(['success'=>true,'data'=>$group->fresh()->load('students:id,name')]); }
 
     public function schedules(Request $request)
@@ -250,7 +268,33 @@ class ApiController extends Controller
 
     public function storeSubscription(Request $request)
     {
-        return DB::transaction(fn()=>Subscription::create($request->validate(['student_id'=>'required|exists:students,id','subject'=>'required','amount'=>'required|numeric|min:0','starts_on'=>'required|date','ends_on'=>'required|date|after_or_equal:starts_on','status'=>'nullable'])));
+        $data = $request->validate([
+            'student_id'=>'required|exists:students,id',
+            'subject'=>'required|string|max:150',
+            'amount'=>'required|numeric|min:0',
+            'starts_on'=>'required|date',
+            'ends_on'=>'required|date|after_or_equal:starts_on',
+            'status'=>'nullable|in:active,inactive,expired',
+            'service_type'=>'nullable|in:private,group',
+            'billing_type'=>'nullable|in:per_lesson,monthly',
+            'lesson_price'=>'nullable|numeric|min:0',
+            'lesson_count'=>'nullable|integer|min:1|max:100',
+        ]);
+        $serviceType = $data['service_type'] ?? 'group';
+        if ($serviceType === 'private') {
+            $data['billing_type'] = 'per_lesson';
+            $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
+            $data['amount'] = $data['lesson_price'];
+            $data['lesson_count'] = null;
+        } else {
+            $data['service_type'] = 'group';
+            $data['billing_type'] = 'monthly';
+            $data['lesson_count'] = $data['lesson_count'] ?? 8;
+        }
+        return DB::transaction(fn()=>response()->json([
+            'success'=>true,
+            'data'=>Subscription::create($data)->load(['student','payments'])
+        ],201));
     }
 
     public function payments(Request $request)
