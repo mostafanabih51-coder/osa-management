@@ -250,7 +250,33 @@ class ApiController extends Controller
 
     public function storeSubscription(Request $request)
     {
-        return DB::transaction(fn()=>Subscription::create($request->validate(['student_id'=>'required|exists:students,id','subject'=>'required','amount'=>'required|numeric|min:0','starts_on'=>'required|date','ends_on'=>'required|date|after_or_equal:starts_on','status'=>'nullable'])));
+        $data = $request->validate([
+            'student_id'=>'required|exists:students,id',
+            'subject'=>'required|string|max:150',
+            'amount'=>'required|numeric|min:0',
+            'starts_on'=>'required|date',
+            'ends_on'=>'required|date|after_or_equal:starts_on',
+            'status'=>'nullable|in:active,inactive,expired',
+            'service_type'=>'nullable|in:private,group',
+            'billing_type'=>'nullable|in:per_lesson,monthly',
+            'lesson_price'=>'nullable|numeric|min:0',
+            'lesson_count'=>'nullable|integer|min:1|max:100',
+        ]);
+        $serviceType = $data['service_type'] ?? 'group';
+        if ($serviceType === 'private') {
+            $data['billing_type'] = 'per_lesson';
+            $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
+            $data['amount'] = $data['lesson_price'];
+            $data['lesson_count'] = null;
+        } else {
+            $data['service_type'] = 'group';
+            $data['billing_type'] = 'monthly';
+            $data['lesson_count'] = $data['lesson_count'] ?? 8;
+        }
+        return DB::transaction(fn()=>response()->json([
+            'success'=>true,
+            'data'=>Subscription::create($data)->load(['student','payments'])
+        ],201));
     }
 
     public function payments(Request $request)
