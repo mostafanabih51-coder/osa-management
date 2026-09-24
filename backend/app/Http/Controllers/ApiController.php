@@ -29,6 +29,9 @@ class ApiController extends Controller
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
             'today_classes' => Schedule::whereDate('starts_at', now())->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'cancelled'))->count(),
+            'students_without_month_payment' => Student::where('status', 'active')
+                ->whereDoesntHave('payments', fn($q) => $q->whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()]))
+                ->count(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
