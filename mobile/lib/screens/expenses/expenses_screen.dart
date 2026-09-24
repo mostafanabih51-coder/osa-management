@@ -19,6 +19,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
   }
   int id(dynamic x) => int.tryParse('${x['id']}') ?? 0;
   void msg(Object e) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString().replaceFirst('Exception: ', ''))));
+  Future<void> pickDate(TextEditingController c) async { final initial=DateTime.tryParse(c.text.trim())??DateTime.now(); final d=await showDatePicker(context:context,initialDate:initial,firstDate:DateTime(2000),lastDate:DateTime(2100),helpText:'اختر التاريخ'); if(d!=null)c.text='${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}'; }
 
   @override void initState() { super.initState(); load(); }
 
@@ -48,7 +49,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               TextFormField(controller: category, decoration: const InputDecoration(labelText: 'البند *'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
               TextFormField(controller: amount, keyboardType: const TextInputType.numberWithOptions(decimal: true), decoration: const InputDecoration(labelText: 'المبلغ *'), validator: (v) { final n = double.tryParse(v ?? ''); return n == null || n <= 0 ? 'أدخل مبلغًا صحيحًا' : null; }),
-              TextFormField(controller: date, decoration: const InputDecoration(labelText: 'التاريخ YYYY-MM-DD'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
+              TextFormField(controller: date, readOnly: true, onTap: () => pickDate(date), decoration: const InputDecoration(labelText: 'التاريخ'), validator: (v) => v == null || v.trim().isEmpty ? 'مطلوب' : null),
               TextFormField(controller: description, decoration: const InputDecoration(labelText: 'الوصف')),
             ]),
           ),

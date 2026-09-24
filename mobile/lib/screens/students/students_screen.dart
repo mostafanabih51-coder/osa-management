@@ -81,6 +81,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
     final phone = TextEditingController(text: '${existing?['phone'] ?? ''}');
     final parent = TextEditingController(text: '${existing?['parent_name'] ?? ''}');
     final grade = TextEditingController(text: '${existing?['grade'] ?? ''}');
+    String curriculum = '${existing?['curriculum'] ?? 'مصري'}';
     final selected = <String>{
       ...list(existing?['subjects'])
           .map(subjectName)
@@ -119,6 +120,17 @@ class _StudentsScreenState extends State<StudentsScreen> {
                         TextFormField(
                           controller: grade,
                           decoration: const InputDecoration(labelText: 'الصف'),
+                        ),
+                        DropdownButtonFormField<String>(
+                          value: const ['مصري','خليجي','International','لغات'].contains(curriculum) ? curriculum : 'مصري',
+                          decoration: const InputDecoration(labelText: 'المنهج'),
+                          items: const [
+                            DropdownMenuItem(value: 'مصري', child: Text('مصري')),
+                            DropdownMenuItem(value: 'خليجي', child: Text('خليجي')),
+                            DropdownMenuItem(value: 'International', child: Text('International')),
+                            DropdownMenuItem(value: 'لغات', child: Text('لغات')),
+                          ],
+                          onChanged: (v) { if (v != null) setDialogState(() => curriculum = v); },
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -173,6 +185,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           'phone': phone.text.trim(),
           'parent_name': parent.text.trim(),
           'grade': grade.text.trim(),
+          'curriculum': curriculum,
           'status': 'active',
           'subjects': selected.toList(),
         };

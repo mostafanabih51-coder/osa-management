@@ -10,7 +10,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
   List<dynamic> groups = [], students = [], teachers = [], supervisors = [];
   List<String> subjects = [];
   bool loading = true;
-  static const fallback = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran'];
+  static const fallback = ['العربية','اللغة الإنجليزية','الرياضيات','العلوم','الدراسات الاجتماعية','Math','Science','English','Arabic','German','French','Spanish','Quran','Chemistry','Physics','Biology','History','Geography','Philosophy'];
 
   List<dynamic> list(dynamic v) {
     if (v is List) return List<dynamic>.from(v);
