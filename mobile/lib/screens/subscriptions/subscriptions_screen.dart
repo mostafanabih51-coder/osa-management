@@ -99,7 +99,6 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     if (!subjects.contains(subject)) subject = subjects.first;
     String status = '${item?['status'] ?? 'active'}';
     String serviceType = '${item?['service_type'] ?? 'group'}';
-    String billingType = '${item?['billing_type'] ?? 'monthly'}';
 
     final amount = TextEditingController(text: '${item?['amount'] ?? ''}');
     final lessonPrice = TextEditingController(
@@ -151,7 +150,6 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                       onChanged: (v) {
                         if (v != null) set(() {
                           serviceType = v;
-                          billingType = v == 'private' ? 'per_lesson' : 'monthly';
                         });
                       },
                       decoration: const InputDecoration(labelText: 'نوع الخدمة *'),
@@ -170,12 +168,13 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                         decoration: const InputDecoration(labelText: 'عدد حصص Group شهريًا'),
                         validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل عددًا صحيحًا' : null,
                       ),
-                    TextFormField(
-                      controller: amount,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                      decoration: const InputDecoration(labelText: 'المبلغ الشهري / قيمة الاشتراك *'),
-                      validator: (v) => double.tryParse(v ?? '') == null ? 'مبلغ غير صحيح' : null,
-                    ),
+                    if (serviceType == 'group')
+                      TextFormField(
+                        controller: amount,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: const InputDecoration(labelText: 'قيمة الاشتراك الشهري *'),
+                        validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل قيمة الاشتراك الشهري' : null,
+                      ),
                     if (serviceType == 'group')
                       DropdownButtonFormField<String>(
                         value: 'monthly',
@@ -242,14 +241,22 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       try {
         final private = serviceType == 'private';
         final lp = double.tryParse(lessonPrice.text);
-        final monthlyAmount = double.tryParse(amount.text)!;
+        final monthlyAmount = double.tryParse(amount.text);
+        if (private && lp == null) {
+          msg('أدخل سعر الحصة الخاصة.');
+          return;
+        }
+        if (!private && monthlyAmount == null) {
+          msg('أدخل قيمة الاشتراك الشهري.');
+          return;
+        }
         final body = {
           'student_id': studentId,
           'subject': subject,
           'service_type': serviceType,
           'billing_type': private ? 'per_lesson' : 'monthly',
-          'amount': private ? (lp ?? monthlyAmount) : monthlyAmount,
-          'lesson_price': private ? (lp ?? monthlyAmount) : null,
+          'amount': private ? lp : monthlyAmount,
+          'lesson_price': private ? lp : null,
           'lesson_count': private ? null : int.tryParse(lessonCount.text),
           'starts_on': start.text.trim(),
           'ends_on': end.text.trim(),
