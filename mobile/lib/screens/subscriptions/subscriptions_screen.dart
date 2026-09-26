@@ -107,8 +107,11 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     final lessonCount = TextEditingController(
       text: '${item?['lesson_count'] ?? 8}',
     );
-    final start = TextEditingController(text: '${item?['starts_on'] ?? ''}');
-    final end = TextEditingController(text: '${item?['ends_on'] ?? ''}');
+    final defaultStart = DateTime.now();
+    final defaultEnd = defaultStart.add(const Duration(days: 30));
+    String isoDate(DateTime d) => '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+    final start = TextEditingController(text: '${item?['starts_on'] ?? isoDate(defaultStart)}');
+    final end = TextEditingController(text: '${item?['ends_on'] ?? isoDate(defaultEnd)}');
     final key = GlobalKey<FormState>();
 
     final ok = await showDialog<bool>(
@@ -129,7 +132,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                       items: students.map((s) => DropdownMenuItem(
                         value: id(s), child: Text('${s['name'] ?? ''}'),
                       )).toList(),
-                      onChanged: (v) { if (v != null) set(() => studentId = v); },
+                      onChanged: (v) { if (v != null) set(() { studentId = v; }); },
                       decoration: const InputDecoration(labelText: 'الطالب *'),
                       validator: (v) => v == null ? 'اختر الطالب' : null,
                     ),
@@ -188,7 +191,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           child: TextFormField(
                             controller: start,
                             readOnly: true,
-                            decoration: const InputDecoration(labelText: 'بداية الاشتراك'),
+                            decoration: const InputDecoration(labelText: 'بداية الاشتراك *'),
                             onTap: () => pickDate(start),
                             validator: (v) => DateTime.tryParse(v ?? '') == null ? 'اختر تاريخ البداية' : null,
                           ),
@@ -198,7 +201,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           child: TextFormField(
                             controller: end,
                             readOnly: true,
-                            decoration: const InputDecoration(labelText: 'نهاية الاشتراك'),
+                            decoration: const InputDecoration(labelText: 'نهاية الاشتراك *'),
                             onTap: () => pickDate(end),
                             validator: (v) {
                               final a = DateTime.tryParse(start.text);
