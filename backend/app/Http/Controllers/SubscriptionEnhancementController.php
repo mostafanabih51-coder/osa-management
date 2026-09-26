@@ -24,10 +24,14 @@ class SubscriptionEnhancementController extends Controller
         ]);
 
         if ($data['service_type'] === 'private') {
-            $data['billing_type'] = 'per_lesson';
             $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
-            $data['amount'] = $data['lesson_price'];
-            $data['lesson_count'] = null;
+            if ($data['billing_type'] === 'monthly') {
+                $data['lesson_count'] = $data['lesson_count'] ?? 8;
+            } else {
+                $data['billing_type'] = 'per_lesson';
+                $data['amount'] = $data['lesson_price'];
+                $data['lesson_count'] = null;
+            }
         } else {
             $data['billing_type'] = 'monthly';
             $data['lesson_count'] = $data['lesson_count'] ?? 8;
