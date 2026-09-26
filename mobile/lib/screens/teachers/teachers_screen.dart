@@ -149,6 +149,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
     int studentId = id(available.first);
     String subject = studentSubjects(available.first).first;
     int? supervisorId;
+    final existingAssignment = (teacher['assignments'] is List ? List<dynamic>.from(teacher['assignments']) : <dynamic>[]).cast<dynamic>();
     final grossPrice = TextEditingController();
     final percentage = TextEditingController(text: '0');
 
