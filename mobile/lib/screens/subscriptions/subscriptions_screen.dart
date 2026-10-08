@@ -8,13 +8,13 @@ class SubscriptionsScreen extends StatefulWidget {
 }
 
 class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
-  List<dynamic> subscriptions = [], students = [];
+  List<dynamic> subscriptions = [], students = [], groups = [];
   List<String> subjects = [];
   bool loading = true;
 
   static const fallbackSubjects = <String>[
-    'العربية', 'اللغة الإنجليزية', 'الرياضيات', 'العلوم', 'الدراسات الاجتماعية',
-    'Math', 'Science', 'English', 'Arabic', 'German', 'French', 'Spanish', 'Quran',
+    'العربية', 'اللغة الإنجليزية', 'مستوى إنجليزي', 'إنجليزي لغات', 'الرياضيات', 'الرياضيات (إنجليزي)', 'العلوم', 'العلوم (إنجليزي)', 'الدراسات الاجتماعية', 'الفرنسية',
+    'Math (English)', 'Science (English)', 'English Level', 'German', 'French', 'Spanish', 'Quran',
     'Chemistry', 'Physics', 'Biology', 'History', 'Geography', 'Philosophy',
   ];
 
@@ -56,6 +56,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     } catch (e) {
       msg(e);
     }
+    try { groups = list(await ApiService.get('groups')); } catch (_) { groups = []; }
     try {
       final ss = list(await ApiService.get('subjects'))
           .map(sub).where((x) => x.trim().isNotEmpty).toSet().toList();
@@ -100,6 +101,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     String status = '${item?['status'] ?? 'active'}';
     String serviceType = '${item?['service_type'] ?? 'group'}';
     String billingType = '${item?['billing_type'] ?? 'monthly'}';
+    int? groupId = int.tryParse('${item?['group_id'] ?? item?['group']?['id'] ?? ''}');
 
     final amount = TextEditingController(text: '${item?['amount'] ?? ''}');
     final lessonPrice = TextEditingController(
@@ -137,6 +139,14 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                       decoration: const InputDecoration(labelText: 'الطالب *'),
                       validator: (v) => v == null ? 'اختر الطالب' : null,
                     ),
+                    if (serviceType == 'group')
+                      DropdownButtonFormField<int>(
+                        value: groups.any((g) => id(g) == groupId && g['students'] is List && (g['students'] as List).any((s) => id(s) == studentId)) ? groupId : null,
+                        items: groups.where((g) => g['students'] is List && (g['students'] as List).any((s) => id(s) == studentId)).map((g) => DropdownMenuItem<int>(value: id(g), child: Text('${g['name'] ?? ''} • ${g['subject'] ?? ''} • ${g['teacher']?['name'] ?? ''}'))).toList(),
+                        onChanged: (v) { if (v != null) set(() { groupId = v; final g = groups.firstWhere((x) => id(x) == v); final gs = '${g['subject'] ?? ''}'; if (subjects.contains(gs)) subject = gs; }); },
+                        decoration: const InputDecoration(labelText: 'المجموعة المرتبط بها الطالب *'),
+                        validator: (v) => v == null ? 'أضف الطالب إلى مجموعة أولًا ثم اخترها' : null,
+                      ),
                     DropdownButtonFormField<String>(
                       value: subject,
                       items: subjects.map((s) => DropdownMenuItem(
@@ -196,20 +206,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                         decoration: const InputDecoration(labelText: 'عدد حصص Group شهريًا'),
                         validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل عددًا صحيحًا' : null,
                       ),
-                    if (serviceType == 'group')
-                      TextFormField(
-                        controller: amount,
-                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                        decoration: const InputDecoration(labelText: 'قيمة الاشتراك الشهري *'),
-                        validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل قيمة الاشتراك الشهري' : null,
-                      ),
-                    if (serviceType == 'group')
-                      DropdownButtonFormField<String>(
-                        value: 'monthly',
-                        items: const [DropdownMenuItem(value: 'monthly', child: Text('شهري'))],
-                        onChanged: (_) {},
-                        decoration: const InputDecoration(labelText: 'نظام الاشتراك'),
-                      ),
+
                     Row(
                       children: [
                         Expanded(
@@ -270,7 +267,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         final private = serviceType == 'private';
         final lp = double.tryParse(lessonPrice.text);
         final monthlyAmount = double.tryParse(amount.text);
-        if (lp == null) {
+        if (private && lp == null) {
           msg('أدخل سعر الحصة الخاصة.');
           return;
         }
@@ -280,6 +277,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         }
         final body = {
           'student_id': studentId,
+          'group_id': serviceType == 'group' ? groupId : null,
           'subject': subject,
           'service_type': serviceType,
           'billing_type': private ? billingType : 'monthly',
