@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Group,Lesson,LessonSetting,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
+use App\Models\{Attendance,Group,Lesson,LessonSetting,StudentSubject,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -73,7 +73,26 @@ class LessonController extends Controller
         return ['success'=>true];
     }
 
-    public function complete(Lesson $lesson){if($lesson->status==='cancelled')return response()->json(['success'=>false,'message'=>'لا يمكن إكمال حصة ملغاة.'],422);$lesson->update(['status'=>'completed','completed_at'=>now()]);return ['success'=>true,'data'=>$lesson->fresh()];}
+    private function countPlanLesson(int $studentId, string $subject): void
+    {
+        $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->first();
+        if(!$plan)return;
+        $type=$plan->plan_type??'monthly';$month=now()->format('Y-m');
+        if($type==='monthly' && $plan->plan_month!==$month && (int)$plan->completed_lessons >= (int)$plan->monthly_lessons){$plan->plan_month=$month;$plan->completed_lessons=0;}
+        if((int)$plan->completed_lessons < (int)$plan->monthly_lessons){$plan->completed_lessons=(int)$plan->completed_lessons+1;$plan->save();}
+    }
+
+    public function complete(Lesson $lesson)
+    {
+        if($lesson->status==='cancelled')return response()->json(['success'=>false,'message'=>'لا يمكن إكمال حصة ملغاة.'],422);
+        if($lesson->status==='completed')return ['success'=>true,'data'=>$lesson->fresh(),'message'=>'الحصة مكتملة بالفعل؛ لم يتم احتسابها مرتين.'];
+        DB::transaction(function()use($lesson){
+            if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject);
+            if($lesson->type==='group'){$ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id')->unique();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject);}
+            $lesson->update(['status'=>'completed','completed_at'=>now()]);
+        });
+        return ['success'=>true,'data'=>$lesson->fresh()];
+    }
 
     public function cancel(Lesson $lesson)
     {
