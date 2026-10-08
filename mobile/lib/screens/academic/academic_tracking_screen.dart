@@ -82,6 +82,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
   }
 
   Future<void> editPlan(dynamic plan) async {
+    String planType = '${plan['plan_type'] ?? 'monthly'}';
     final total = TextEditingController(text: '${plan['monthly_lessons'] ?? 4}');
     final completed = TextEditingController(text: '${plan['completed_lessons'] ?? 0}');
     final month = TextEditingController(
@@ -91,14 +92,15 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text('${plan['subject'] ?? ''} - خطة الشهر'),
+        title: Text('${plan['subject'] ?? ''} - خطة الحصص'),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            DropdownButtonFormField<String>(value: planType, items: const [DropdownMenuItem(value: 'monthly', child: Text('اشتراك شهري')), DropdownMenuItem(value: 'package', child: Text('باقة بعدد حصص'))], onChanged: (v) { if (v != null) planType = v; }, decoration: const InputDecoration(labelText: 'نوع الخطة')),
             TextField(
               controller: total,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(labelText: 'عدد الحصص الشهرية'),
+              decoration: const InputDecoration(labelText: 'إجمالي الحصص بالخطة أو الباقة'),
             ),
             TextField(
               controller: completed,
@@ -107,7 +109,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
             ),
             TextField(
               controller: month,
-              decoration: const InputDecoration(labelText: 'الشهر YYYY-MM'),
+              decoration: const InputDecoration(labelText: 'شهر بداية الخطة YYYY-MM (للباقة لا يتغير تلقائيًا)'),
             ),
           ],
         ),
@@ -130,6 +132,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
           'monthly_lessons': int.tryParse(total.text) ?? 0,
           'completed_lessons': int.tryParse(completed.text) ?? 0,
           'plan_month': month.text.trim(),
+          'plan_type': planType,
         });
         await select(selectedId!);
       } catch (e) {

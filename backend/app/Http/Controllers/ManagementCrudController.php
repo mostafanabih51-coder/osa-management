@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Payment, Subscription, Teacher};
+use App\Models\{Group, Payment, Subscription, Teacher};
 use Illuminate\Http\Request;
 
 class ManagementCrudController extends Controller
@@ -29,6 +29,7 @@ class ManagementCrudController extends Controller
     {
         $d=$r->validate([
             'student_id'=>'sometimes|exists:students,id',
+            'group_id'=>'nullable|exists:groups,id',
             'subject'=>'sometimes|required',
             'amount'=>'sometimes|numeric|min:0',
             'starts_on'=>'sometimes|date',
@@ -47,22 +48,34 @@ class ManagementCrudController extends Controller
         }
 
         $serviceType=$d['service_type'] ?? $subscription->service_type ?? 'group';
+        $billingType=$d['billing_type'] ?? $subscription->billing_type ?? ($serviceType==='private'?'per_lesson':'monthly');
         if ($serviceType === 'private') {
-            $d['billing_type']='per_lesson';
+            $d['group_id']=null;
             $price=$d['lesson_price'] ?? $subscription->lesson_price ?? $d['amount'] ?? $subscription->amount;
             $d['lesson_price']=$price;
-            $d['amount']=$price;
-            $d['lesson_count']=null;
+            if ($billingType === 'monthly') {
+                $d['billing_type']='monthly'; $d['amount']=$d['amount'] ?? $subscription->amount;
+                $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count ?? 8;
+            } else {
+                $d['billing_type']='per_lesson'; $d['amount']=$price; $d['lesson_count']=null;
+            }
         } else {
-            $d['billing_type']='monthly';
+            $d['billing_type']='monthly'; $d['lesson_price']=null;
             $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count ?? 8;
+            $groupId=$d['group_id'] ?? $subscription->group_id;
+            if (!$groupId) return response()->json(['message'=>'اختر المجموعة المرتبط بها الطالب.'],422);
+            $group=Group::with('students')->findOrFail($groupId);
+            $studentId=$d['student_id'] ?? $subscription->student_id; $subject=$d['subject'] ?? $subscription->subject;
+            if ((string)$group->subject !== (string)$subject) return response()->json(['message'=>'مادة الاشتراك يجب أن تطابق مادة المجموعة.'],422);
+            if (!$group->students->contains('id',(int)$studentId)) return response()->json(['message'=>'أضف الطالب إلى المجموعة أولًا، ثم احفظ الاشتراك.'],422);
+            $d['group_id']=$groupId;
         }
         $d['service_type']=$serviceType;
-
+        $d['billing_type']=$billingType==='monthly'?'monthly':($serviceType==='private'?'per_lesson':'monthly');
         $subscription->update($d);
         return response()->json([
             'success'=>true,
-            'data'=>$subscription->fresh()->load(['student','payments'])
+            'data'=>$subscription->fresh()->load(['student','group.teacher','group.students','payments'])
         ]);
     }
 
