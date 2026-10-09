@@ -43,7 +43,12 @@ class LessonController extends Controller
         if(!array_key_exists('teacher_rate',$d)||$d['teacher_rate']===null) $d['teacher_rate']=$assignment?->teacher_rate??$g?->teacher_rate;
         if(!array_key_exists('supervisor_rate',$d)||$d['supervisor_rate']===null) $d['supervisor_rate']=LessonSetting::where('lesson_type',$d['type'])->where('active',true)->value('supervisor_rate')??0;
         $d['status']=$d['status']??'scheduled'; $d['teacher_rate']=$d['teacher_rate']??0; $d['supervisor_rate']=$d['supervisor_rate']??0; $d['teacher_due']=$d['teacher_rate']; $d['supervisor_due']=$d['supervisor_rate'];
-        $lesson=DB::transaction(function()use($d){$l=Lesson::create($d);TeacherLessonDue::create(['teacher_id'=>$l->teacher_id,'lesson_id'=>$l->id,'amount'=>$l->teacher_due,'paid_amount'=>0,'status'=>'unpaid']);if($l->supervisor_id)SupervisorDue::create(['supervisor_id'=>$l->supervisor_id,'lesson_id'=>$l->id,'amount'=>$l->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);return $l;});
+        $lesson=DB::transaction(function()use($d){
+            // A scheduled lesson is not earned yet. Create financial dues only when completion is confirmed.
+            $l=Lesson::create($d);
+            if($l->status==='completed') $this->ensureCompletedLessonDues($l);
+            return $l;
+        });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])],201);
     }
 
@@ -82,16 +87,45 @@ class LessonController extends Controller
         if((int)$plan->completed_lessons < (int)$plan->monthly_lessons){$plan->completed_lessons=(int)$plan->completed_lessons+1;$plan->save();}
     }
 
+    /**
+     * Create dues idempotently only for a completed lesson.
+     * The lesson_id relationship is the de-duplication key for this workflow.
+     */
+    private function ensureCompletedLessonDues(Lesson $lesson): void
+    {
+        TeacherLessonDue::firstOrCreate(
+            ['lesson_id' => $lesson->id],
+            ['teacher_id' => $lesson->teacher_id, 'amount' => $lesson->teacher_due ?? $lesson->teacher_rate ?? 0, 'paid_amount' => 0, 'status' => 'unpaid']
+        );
+
+        if ($lesson->supervisor_id) {
+            SupervisorDue::firstOrCreate(
+                ['lesson_id' => $lesson->id],
+                ['supervisor_id' => $lesson->supervisor_id, 'amount' => $lesson->supervisor_due ?? $lesson->supervisor_rate ?? 0, 'paid_amount' => 0, 'status' => 'unpaid']
+            );
+        }
+    }
+
     public function complete(Lesson $lesson)
     {
         if($lesson->status==='cancelled')return response()->json(['success'=>false,'message'=>'لا يمكن إكمال حصة ملغاة.'],422);
-        if($lesson->status==='completed')return ['success'=>true,'data'=>$lesson->fresh(),'message'=>'الحصة مكتملة بالفعل؛ لم يتم احتسابها مرتين.'];
+        if($lesson->status==='completed') {
+            // Repair a missing due record on legacy completed lessons without duplicating existing dues.
+            DB::transaction(fn() => $this->ensureCompletedLessonDues($lesson));
+            return ['success'=>true,'data'=>$lesson->fresh()->load(['teacherDueRecord','supervisorDueRecord']),'message'=>'الحصة مكتملة بالفعل؛ لم يتم احتسابها مرتين.'];
+        }
         DB::transaction(function()use($lesson){
+            $lesson = Lesson::whereKey($lesson->id)->lockForUpdate()->firstOrFail();
+            if($lesson->status==='completed') {
+                $this->ensureCompletedLessonDues($lesson);
+                return;
+            }
             if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject);
             if($lesson->type==='group'){$ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id')->unique();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject);}
             $lesson->update(['status'=>'completed','completed_at'=>now()]);
+            $this->ensureCompletedLessonDues($lesson->fresh());
         });
-        return ['success'=>true,'data'=>$lesson->fresh()];
+        return ['success'=>true,'data'=>$lesson->fresh()->load(['teacherDueRecord','supervisorDueRecord'])];
     }
 
     public function cancel(Lesson $lesson)
