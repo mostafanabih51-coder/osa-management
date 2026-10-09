@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Attendance,Group,Lesson,LessonSetting,StudentSubject,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
+use App\Models\{Attendance,Group,Lesson,LessonSetting,StudentSubject,Subscription,SubscriptionLessonUsage,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -66,11 +66,13 @@ class LessonController extends Controller
         if(strtotime($d['ends_at']??$lesson->ends_at)<=strtotime($d['starts_at']??$lesson->starts_at)) return response()->json(['success'=>false,'message'=>'نهاية الحصة يجب أن تكون بعد البداية.'],422);
         if($e['type']==='group')$d['student_id']=null;else$d['group_id']=null;
         if(isset($d['teacher_rate']))$d['teacher_due']=$d['teacher_rate']; if(isset($d['supervisor_rate']))$d['supervisor_due']=$d['supervisor_rate'];
-        DB::transaction(function()use($lesson,$d,$e,$td,$sd){
+        $wasCompleted = $lesson->status === 'completed';
+        DB::transaction(function()use($lesson,$d,$e,$td,$sd,$wasCompleted){
             $lesson->update($d);
             if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}
             if($lesson->supervisor_id){if(!$sd && $lesson->status==='completed')SupervisorDue::firstOrCreate(['lesson_id'=>$lesson->id],['supervisor_id'=>$lesson->supervisor_id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif($sd && (float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd && (float)$sd->paid_amount===0){$sd->delete();}
             $lesson->refresh();
+            if(!$wasCompleted && $lesson->status==='completed')$this->recordSubscriptionUsage($lesson);
             if($lesson->status==='completed')$this->ensureCompletedLessonDues($lesson);
         });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])]);
@@ -84,13 +86,73 @@ class LessonController extends Controller
         return ['success'=>true];
     }
 
-    private function countPlanLesson(int $studentId, string $subject): void
+    private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false): void
     {
         $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->first();
         if(!$plan)return;
         $type=$plan->plan_type??'monthly';$month=now()->format('Y-m');
-        if($type==='monthly' && $plan->plan_month!==$month && (int)$plan->completed_lessons >= (int)$plan->monthly_lessons){$plan->plan_month=$month;$plan->completed_lessons=0;}
+        if($type==='monthly' && $plan->plan_month!==$month && ($resetOnMonthChange || (int)$plan->completed_lessons >= (int)$plan->monthly_lessons)){$plan->plan_month=$month;$plan->completed_lessons=0;}
         if((int)$plan->completed_lessons < (int)$plan->monthly_lessons){$plan->completed_lessons=(int)$plan->completed_lessons+1;$plan->save();}
+    }
+
+    /**
+     * Attach each completed lesson to the subscription whose lesson balance it consumes.
+     * Private monthly packages carry forward until their lesson count is used; group
+     * lessons are charged against the matching month's group subscription for every
+     * enrolled student, including students marked absent.
+     */
+    private function recordSubscriptionUsage(Lesson $lesson): void
+    {
+        $lessonDate = $lesson->starts_at?->toDateString() ?? now()->toDateString();
+
+        if ($lesson->type === 'private' && $lesson->student_id) {
+            $studentId = (int) $lesson->student_id;
+            $base = Subscription::where('student_id', $studentId)
+                ->where('subject', $lesson->subject)
+                ->where('service_type', 'private')
+                ->whereIn('status', ['active', 'expired'])
+                ->orderBy('starts_on')->orderBy('id');
+
+            $chosen = null;
+            foreach ((clone $base)->where('billing_type', 'monthly')->whereNotNull('lesson_count')->get() as $candidate) {
+                $used = SubscriptionLessonUsage::where('subscription_id', $candidate->id)->count();
+                if ($used < (int) $candidate->lesson_count) { $chosen = $candidate; break; }
+            }
+
+            if (!$chosen) {
+                $chosen = (clone $base)->where('billing_type', 'per_lesson')
+                    ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
+                    ->orderByDesc('starts_on')->first();
+            }
+
+            if ($chosen) {
+                SubscriptionLessonUsage::firstOrCreate(
+                    ['lesson_id' => $lesson->id, 'student_id' => $studentId],
+                    ['subscription_id' => $chosen->id, 'lesson_date' => $lessonDate, 'service_type' => 'private']
+                );
+            }
+            return;
+        }
+
+        if ($lesson->type === 'group' && $lesson->group_id) {
+            $group = Group::with('students')->find($lesson->group_id);
+            if (!$group) return;
+            foreach ($group->students as $student) {
+                $subscription = Subscription::where('student_id', $student->id)
+                    ->where('subject', $lesson->subject)
+                    ->where('service_type', 'group')
+                    ->where('group_id', $group->id)
+                    ->whereIn('status', ['active', 'expired'])
+                    ->whereDate('starts_on', '<=', $lessonDate)
+                    ->whereDate('ends_on', '>=', $lessonDate)
+                    ->orderByDesc('starts_on')->first();
+                if (!$subscription) continue;
+                SubscriptionLessonUsage::firstOrCreate(
+                    ['lesson_id' => $lesson->id, 'student_id' => $student->id],
+                    ['subscription_id' => $subscription->id, 'lesson_date' => $lessonDate, 'service_type' => 'group']
+                );
+            }
+        }
     }
 
     /**
@@ -127,8 +189,9 @@ class LessonController extends Controller
                 return;
             }
             if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject);
-            if($lesson->type==='group'){$ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id')->unique();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject);}
+            if($lesson->type==='group'){$ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true);}
             $lesson->update(['status'=>'completed','completed_at'=>now()]);
+            $this->recordSubscriptionUsage($lesson->fresh());
             $this->ensureCompletedLessonDues($lesson->fresh());
         });
         return ['success'=>true,'data'=>$lesson->fresh()->load(['teacherDueRecord','supervisorDueRecord'])];
