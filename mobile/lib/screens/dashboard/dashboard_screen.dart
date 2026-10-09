@@ -55,7 +55,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Widget body;
     if(loading) body=const Center(child:CircularProgressIndicator());
     else if(error!=null) body=Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[Text(error!,textAlign:TextAlign.center),const SizedBox(height:12),FilledButton(onPressed:loadDashboard,child:const Text('إعادة المحاولة'))])));
-    else if(staff) body=Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[const Icon(Icons.account_balance_wallet,size:56),const SizedBox(height:12),Text(role=='teacher'?'بوابة المدرس':'بوابة المشرف',style:Theme.of(context).textTheme.headlineSmall),const SizedBox(height:8),const Text('تابع مستحقات الحصص واطلب السحب من حسابك.',textAlign:TextAlign.center),const SizedBox(height:16),FilledButton.icon(onPressed:()=>open(const RolePortalScreen()),icon:const Icon(Icons.open_in_new),label:const Text('فتح بوابة المستحقات'))])););
+    else if (staff) {
+      body = Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.account_balance_wallet, size: 56),
+              const SizedBox(height: 12),
+              Text(role == 'teacher' ? 'بوابة المدرس' : 'بوابة المشرف',
+                  style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 8),
+              const Text('تابع مستحقات الحصص واطلب السحب من حسابك.',
+                  textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () => open(const RolePortalScreen()),
+                icon: const Icon(Icons.open_in_new),
+                label: const Text('فتح بوابة المستحقات'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
     else body=RefreshIndicator(onRefresh:loadDashboard,child:ListView(padding:const EdgeInsets.all(16),children:[Card(child:Padding(padding:const EdgeInsets.all(16),child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[Text('Online School Academy',style:Theme.of(context).textTheme.headlineSmall),const SizedBox(height:8),const Text('إدارة الطلاب والمدرسين والحصص والمالية والمتابعة الأكاديمية من مكان واحد.'),const SizedBox(height:12),FilledButton.icon(onPressed:()=>open(const AcademicTrackingScreen()),icon:const Icon(Icons.analytics),label:const Text('المتابعة والحصص الشهرية'))]))),const SizedBox(height:10),GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),crossAxisCount:2,crossAxisSpacing:10,mainAxisSpacing:10,children:[stat('الطلاب',data?['students'],Icons.people,const StudentsScreen()),stat('المدرسون',data?['teachers'],Icons.school,const TeachersScreen()),stat('حصص اليوم',data?['today_classes'],Icons.calendar_today,const LessonsScreen()),stat('حضور اليوم',data?['today_attendance'],Icons.fact_check,const AttendanceScreen()),stat('دخل الشهر',data?['monthly_income'],Icons.payments,const PaymentsScreen()),stat('مصروفات الشهر',data?['monthly_expenses'],Icons.money_off,const ExpensesScreen()),stat('غير المسددين',data?['students_without_month_payment'],Icons.warning_amber,const SubscriptionsScreen(showDebtorsOnly:true))]) ]));
     return Scaffold(appBar:AppBar(title:Text('${data?['academy_name']??'Online School Academy'}'),actions:[IconButton(onPressed:loading?null:loadDashboard,icon:const Icon(Icons.refresh)),IconButton(onPressed:logout,icon:const Icon(Icons.logout))]),drawer:Drawer(child:ListView(padding:EdgeInsets.zero,children:[const DrawerHeader(decoration:BoxDecoration(color:AppColors.black),child:Text('Online School Academy',style:TextStyle(color:Colors.white,fontSize:20,fontWeight:FontWeight.bold))),...menu])),body:body);
   }
