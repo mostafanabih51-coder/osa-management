@@ -45,7 +45,17 @@ class ManagementCrudController extends Controller
         $lockedFields = ['student_id','group_id','subject','amount','starts_on','ends_on','billing_type','lesson_price','lesson_count','service_type'];
         if ($hasFinancialHistory) {
             foreach ($lockedFields as $field) {
-                if (array_key_exists($field, $d) && (string) $d[$field] !== (string) $subscription->{$field}) {
+                if (!array_key_exists($field, $d)) continue;
+                $before = $subscription->{$field};
+                $after = $d[$field];
+                if (in_array($field, ['amount', 'lesson_price'], true)) {
+                    $changed = abs((float) ($after ?? 0) - (float) ($before ?? 0)) > 0.009;
+                } elseif (in_array($field, ['student_id', 'group_id', 'lesson_count'], true)) {
+                    $changed = (int) ($after ?? 0) !== (int) ($before ?? 0);
+                } else {
+                    $changed = (string) ($after ?? '') !== (string) ($before ?? '');
+                }
+                if ($changed) {
                     return response()->json(['success'=>false,'message'=>'لا يمكن تغيير بيانات التسعير أو ربط الاشتراك بعد تسجيل دفعات أو حصص؛ أنشئ اشتراكًا جديدًا للتغييرات المستقبلية.'],422);
                 }
             }
