@@ -134,7 +134,7 @@ class LessonController extends Controller
             }
 
             if (!$chosen) {
-                $chosen = (clone $base)->where('billing_type', 'per_lesson')
+                $chosen = (clone $base)->where('billing_type', 'per_lesson')->reorder()
                     ->orderByRaw("CASE WHEN status = 'active' THEN 0 ELSE 1 END")
                     ->orderByDesc('starts_on')->first();
             }
