@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
-  const SubscriptionsScreen({super.key});
+  final bool showDebtorsOnly;
+  const SubscriptionsScreen({super.key, this.showDebtorsOnly = false});
   @override
   State<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
 }
@@ -26,6 +27,31 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     }
     return [];
   }
+
+  double outstanding(dynamic s) {
+    if (s is! Map) return 0;
+    final payments = list(s['payments']);
+    final paid = payments.fold<double>(0, (sum, p) =>
+        sum + (double.tryParse('${p is Map ? p['amount'] : 0}') ?? 0));
+    final usageCount = int.tryParse('${s['lesson_usages_count'] ?? list(s['lesson_usages']).length}') ?? 0;
+    final isPerLesson = '${s['billing_type'] ?? 'monthly'}' == 'per_lesson';
+    final price = double.tryParse('${s['lesson_price'] ?? s['amount'] ?? 0}') ?? 0;
+    final gross = isPerLesson ? price * usageCount : (double.tryParse('${s['amount'] ?? 0}') ?? 0);
+    return gross > paid ? gross - paid : 0;
+  }
+
+  int usedLessons(dynamic s) =>
+      int.tryParse('${s is Map ? s['lesson_usages_count'] ?? list(s['lesson_usages']).length : 0}') ?? 0;
+
+  int remainingLessons(dynamic s) {
+    final count = int.tryParse('${s is Map ? s['lesson_count'] ?? '' : ''}') ?? 0;
+    final remaining = count - usedLessons(s);
+    return remaining > 0 ? remaining : 0;
+  }
+
+  List<dynamic> get displayedSubscriptions => widget.showDebtorsOnly
+      ? subscriptions.where((s) => outstanding(s) > 0.009).toList()
+      : subscriptions;
 
   int id(dynamic x) => int.tryParse('${x['id']}') ?? 0;
   String sub(dynamic x) => x is Map ? '${x['subject'] ?? x['name'] ?? ''}' : '$x';
@@ -341,16 +367,16 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
             onRefresh: load,
-            child: subscriptions.isEmpty
+            child: displayedSubscriptions.isEmpty
                 ? ListView(children: const [
                     SizedBox(height: 180),
                     Center(child: Text('لا توجد اشتراكات.')),
                   ])
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                    itemCount: subscriptions.length,
+                    itemCount: displayedSubscriptions.length,
                     itemBuilder: (_, i) {
-                      final s = subscriptions[i];
+                      final s = displayedSubscriptions[i];
                       final student = s['student'];
                       return Card(
                         child: ListTile(
