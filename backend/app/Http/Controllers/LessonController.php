@@ -70,6 +70,13 @@ class LessonController extends Controller
         $financialFields=['type','teacher_id','supervisor_id','group_id','student_id','subject','teacher_rate','supervisor_rate'];
         if($financiallyPaid) foreach($financialFields as $f) if(array_key_exists($f,$d) && (string)$d[$f] !== (string)$lesson->{$f}) return response()->json(['success'=>false,'message'=>'لا يمكن تغيير بيانات الحصة المالية بعد صرف المستحق.'],422);
         if($lesson->status==='completed' && isset($d['status']) && $d['status']!=='completed') return response()->json(['success'=>false,'message'=>'لا يمكن إعادة فتح حصة مكتملة.'],422);
+        if($lesson->status==='completed') {
+            $completedAccountingFields=['type','teacher_id','supervisor_id','group_id','student_id','subject','teacher_rate','supervisor_rate'];
+            foreach($completedAccountingFields as $f) {
+                if(array_key_exists($f,$d) && (string)($d[$f] ?? '') !== (string)($lesson->{$f} ?? '')) return response()->json(['success'=>false,'message'=>'لا يمكن تعديل بيانات الحصة المرتبطة بالاشتراك أو المستحقات بعد اكتمالها. أنشئ إجراء تصحيح منفصلًا للحفاظ على السجلات المالية.'],422);
+            }
+            if(array_key_exists('starts_at',$d) && strtotime((string)$d['starts_at']) !== strtotime((string)$lesson->starts_at)) return response()->json(['success'=>false,'message'=>'لا يمكن تغيير تاريخ بداية حصة مكتملة لأنه يؤثر على عداد الحصص والاشتراك.'],422);
+        }
         $e=array_merge(['type'=>$lesson->type,'teacher_id'=>$lesson->teacher_id,'group_id'=>$lesson->group_id,'student_id'=>$lesson->student_id,'subject'=>$lesson->subject],$d); if($e['type']==='group')$e['student_id']=null;else$e['group_id']=null; $this->relations($e);
         if(strtotime($d['ends_at']??$lesson->ends_at)<=strtotime($d['starts_at']??$lesson->starts_at)) return response()->json(['success'=>false,'message'=>'نهاية الحصة يجب أن تكون بعد البداية.'],422);
         if($e['type']==='group')$d['student_id']=null;else$d['group_id']=null;
@@ -80,7 +87,15 @@ class LessonController extends Controller
             if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}
             if($lesson->supervisor_id){if(!$sd && $lesson->status==='completed')SupervisorDue::firstOrCreate(['lesson_id'=>$lesson->id],['supervisor_id'=>$lesson->supervisor_id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif($sd && (float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd && (float)$sd->paid_amount===0){$sd->delete();}
             $lesson->refresh();
-            if(!$wasCompleted && $lesson->status==='completed')$this->recordSubscriptionUsage($lesson);
+            if(!$wasCompleted && $lesson->status==='completed') {
+                $month=$lesson->starts_at?->format('Y-m');
+                if($lesson->type==='private' && $lesson->student_id) $this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$month);
+                if($lesson->type==='group') {
+                    $ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();
+                    foreach($ids as $studentId) $this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$month);
+                }
+                $this->recordSubscriptionUsage($lesson);
+            }
             if($lesson->status==='completed')$this->ensureCompletedLessonDues($lesson);
         });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])]);
