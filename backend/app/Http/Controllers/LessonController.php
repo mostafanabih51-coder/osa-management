@@ -1,11 +1,12 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Attendance,Group,Lesson,LessonSetting,StudentSubject,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
+use App\Models\{Attendance,Group,Lesson,LessonSetting,Student,StudentSubject,Subscription,SubscriptionLessonUsage,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
+use App\Services\SubscriptionUsageRecorder;
 
 class LessonController extends Controller
 {
@@ -37,13 +38,25 @@ class LessonController extends Controller
     {
         $d=$r->validate(['type'=>['required',Rule::in(['group','private'])],'teacher_id'=>'required|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'required|string|max:255','starts_at'=>'required|date','ends_at'=>'required|date|after:starts_at','zoom_url'=>'nullable|string','status'=>['nullable',Rule::in(['scheduled','completed','cancelled'])],'teacher_rate'=>'nullable|numeric|min:0','supervisor_rate'=>'nullable|numeric|min:0','notes'=>'nullable|string']);
         $this->relations($d);
+        if($d['type']==='private' && !Student::whereKey($d['student_id'])->value('allow_lessons_with_debt') && $this->studentOutstandingBalance((int)$d['student_id']) > 0.009) return response()->json(['success'=>false,'message'=>'تم إيقاف الحصص الجديدة لهذا الطالب بسبب وجود مديونية؛ سجّل السداد أو غيّر سياسة الطالب أولًا.'],422);
         if($d['type']==='group') $d['student_id']=null; else $d['group_id']=null;
         $assignment=$d['type']==='private'?TeacherStudentSubject::where(['teacher_id'=>$d['teacher_id'],'student_id'=>$d['student_id'],'subject'=>$d['subject'],'status'=>'active'])->first():null;
         $g=$d['type']==='group'?Group::find($d['group_id']):null;
         if(!array_key_exists('teacher_rate',$d)||$d['teacher_rate']===null) $d['teacher_rate']=$assignment?->teacher_rate??$g?->teacher_rate;
         if(!array_key_exists('supervisor_rate',$d)||$d['supervisor_rate']===null) $d['supervisor_rate']=LessonSetting::where('lesson_type',$d['type'])->where('active',true)->value('supervisor_rate')??0;
         $d['status']=$d['status']??'scheduled'; $d['teacher_rate']=$d['teacher_rate']??0; $d['supervisor_rate']=$d['supervisor_rate']??0; $d['teacher_due']=$d['teacher_rate']; $d['supervisor_due']=$d['supervisor_rate'];
-        $lesson=DB::transaction(function()use($d){$l=Lesson::create($d);TeacherLessonDue::create(['teacher_id'=>$l->teacher_id,'lesson_id'=>$l->id,'amount'=>$l->teacher_due,'paid_amount'=>0,'status'=>'unpaid']);if($l->supervisor_id)SupervisorDue::create(['supervisor_id'=>$l->supervisor_id,'lesson_id'=>$l->id,'amount'=>$l->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);return $l;});
+        $lesson=DB::transaction(function()use($d){
+            // A scheduled lesson is not earned yet. Create financial dues only when completion is confirmed.
+            $l=Lesson::create($d);
+            if($l->status==='completed') {
+                $month=$l->starts_at?->format('Y-m');
+                if($l->type==='private' && $l->student_id)$this->countPlanLesson((int)$l->student_id,(string)$l->subject,false,$month);
+                if($l->type==='group'){$ids=Group::find($l->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$l->subject,true,$month);}
+                $this->recordSubscriptionUsage($l);
+                $this->ensureCompletedLessonDues($l);
+            }
+            return $l;
+        });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])],201);
     }
 
@@ -61,37 +74,99 @@ class LessonController extends Controller
         if(strtotime($d['ends_at']??$lesson->ends_at)<=strtotime($d['starts_at']??$lesson->starts_at)) return response()->json(['success'=>false,'message'=>'نهاية الحصة يجب أن تكون بعد البداية.'],422);
         if($e['type']==='group')$d['student_id']=null;else$d['group_id']=null;
         if(isset($d['teacher_rate']))$d['teacher_due']=$d['teacher_rate']; if(isset($d['supervisor_rate']))$d['supervisor_due']=$d['supervisor_rate'];
-        DB::transaction(function()use($lesson,$d,$e,$td,$sd){$lesson->update($d);if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}if($lesson->supervisor_id){if(!$sd)SupervisorDue::create(['supervisor_id'=>$lesson->supervisor_id,'lesson_id'=>$lesson->id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif((float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd){$sd->delete();}});
+        $wasCompleted = $lesson->status === 'completed';
+        DB::transaction(function()use($lesson,$d,$e,$td,$sd,$wasCompleted){
+            $lesson->update($d);
+            if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}
+            if($lesson->supervisor_id){if(!$sd && $lesson->status==='completed')SupervisorDue::firstOrCreate(['lesson_id'=>$lesson->id],['supervisor_id'=>$lesson->supervisor_id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif($sd && (float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd && (float)$sd->paid_amount===0){$sd->delete();}
+            $lesson->refresh();
+            if(!$wasCompleted && $lesson->status==='completed')$this->recordSubscriptionUsage($lesson);
+            if($lesson->status==='completed')$this->ensureCompletedLessonDues($lesson);
+        });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])]);
     }
 
     public function destroy(Lesson $lesson)
     {
+        if(SubscriptionLessonUsage::where('lesson_id',$lesson->id)->exists())return response()->json(['success'=>false,'message'=>'لا يمكن حذف حصة تم احتسابها ضمن رصيد اشتراك؛ ألغِ الحصة أو صحح سجل الاشتراك أولًا.'],422);
         $paid=TeacherLessonDue::where('lesson_id',$lesson->id)->where('paid_amount','>',0)->exists()||SupervisorDue::where('lesson_id',$lesson->id)->where('paid_amount','>',0)->exists();
         if($paid)return response()->json(['success'=>false,'message'=>'لا يمكن حذف حصة تم صرف مستحقاتها.'],422);
         DB::transaction(function()use($lesson){TeacherLessonDue::where('lesson_id',$lesson->id)->delete();SupervisorDue::where('lesson_id',$lesson->id)->delete();$lesson->delete();});
         return ['success'=>true];
     }
 
-    private function countPlanLesson(int $studentId, string $subject): void
+    private function studentOutstandingBalance(int $studentId): float
+    {
+        return Subscription::with(['payments', 'lessonUsages'])->where('student_id', $studentId)->get()
+            ->sum(function ($subscription) {
+                $paid = (float) $subscription->payments->sum('amount');
+                $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * ((int) ($subscription->lesson_count ?? 0) > 0 ? intdiv($subscription->lessonUsages->count(), (int) $subscription->lesson_count) * (int) $subscription->lesson_count : $subscription->lessonUsages->count())
+                    : (float) $subscription->amount;
+                return max(0, $gross - $paid);
+            });
+    }
+
+    private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false, ?string $planMonth = null): void
     {
         $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->first();
         if(!$plan)return;
-        $type=$plan->plan_type??'monthly';$month=now()->format('Y-m');
-        if($type==='monthly' && $plan->plan_month!==$month && (int)$plan->completed_lessons >= (int)$plan->monthly_lessons){$plan->plan_month=$month;$plan->completed_lessons=0;}
+        $type=$plan->plan_type??'monthly';$month=$planMonth ?? now()->format('Y-m');
+        if($type==='monthly' && $plan->plan_month!==$month && ($resetOnMonthChange || empty($plan->plan_month) || (int)$plan->completed_lessons >= (int)$plan->monthly_lessons)){$plan->plan_month=$month;$plan->completed_lessons=0;}
         if((int)$plan->completed_lessons < (int)$plan->monthly_lessons){$plan->completed_lessons=(int)$plan->completed_lessons+1;$plan->save();}
+    }
+
+    /**
+     * Attach each completed lesson to the subscription whose lesson balance it consumes.
+     * Private monthly packages carry forward until their lesson count is used; group
+     * lessons are charged against the matching month's group subscription for every
+     * enrolled student, including students marked absent.
+     */
+    private function recordSubscriptionUsage(Lesson $lesson): void
+    {
+        app(SubscriptionUsageRecorder::class)->record($lesson);
+    }
+
+    /**
+     * Create dues idempotently only for a completed lesson.
+     * The lesson_id relationship is the de-duplication key for this workflow.
+     */
+    private function ensureCompletedLessonDues(Lesson $lesson): void
+    {
+        TeacherLessonDue::firstOrCreate(
+            ['lesson_id' => $lesson->id],
+            ['teacher_id' => $lesson->teacher_id, 'amount' => $lesson->teacher_due ?? $lesson->teacher_rate ?? 0, 'paid_amount' => 0, 'status' => 'unpaid']
+        );
+
+        if ($lesson->supervisor_id) {
+            SupervisorDue::firstOrCreate(
+                ['lesson_id' => $lesson->id],
+                ['supervisor_id' => $lesson->supervisor_id, 'amount' => $lesson->supervisor_due ?? $lesson->supervisor_rate ?? 0, 'paid_amount' => 0, 'status' => 'unpaid']
+            );
+        }
     }
 
     public function complete(Lesson $lesson)
     {
         if($lesson->status==='cancelled')return response()->json(['success'=>false,'message'=>'لا يمكن إكمال حصة ملغاة.'],422);
-        if($lesson->status==='completed')return ['success'=>true,'data'=>$lesson->fresh(),'message'=>'الحصة مكتملة بالفعل؛ لم يتم احتسابها مرتين.'];
+        if($lesson->status==='completed') {
+            // Repair a missing due record on legacy completed lessons without duplicating existing dues.
+            DB::transaction(fn() => $this->ensureCompletedLessonDues($lesson));
+            return ['success'=>true,'data'=>$lesson->fresh()->load(['teacherDueRecord','supervisorDueRecord']),'message'=>'الحصة مكتملة بالفعل؛ لم يتم احتسابها مرتين.'];
+        }
         DB::transaction(function()use($lesson){
-            if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject);
-            if($lesson->type==='group'){$ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id')->unique();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject);}
+            $lesson = Lesson::whereKey($lesson->id)->lockForUpdate()->firstOrFail();
+            if($lesson->status==='completed') {
+                $this->ensureCompletedLessonDues($lesson);
+                return;
+            }
+            if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$lesson->starts_at?->format('Y-m'));
+            if($lesson->type==='group'){$ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$lesson->starts_at?->format('Y-m'));}
             $lesson->update(['status'=>'completed','completed_at'=>now()]);
+            $this->recordSubscriptionUsage($lesson->fresh());
+            $this->ensureCompletedLessonDues($lesson->fresh());
         });
-        return ['success'=>true,'data'=>$lesson->fresh()];
+        return ['success'=>true,'data'=>$lesson->fresh()->load(['teacherDueRecord','supervisorDueRecord'])];
     }
 
     public function cancel(Lesson $lesson)

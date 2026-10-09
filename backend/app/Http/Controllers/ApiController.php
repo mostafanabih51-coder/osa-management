@@ -20,18 +20,41 @@ class ApiController extends Controller
 
     public function logout(Request $request) { $request->user()->currentAccessToken()?->delete(); return ['message' => 'تم تسجيل الخروج']; }
 
+    private function studentHasOutstandingSubscriptionBalance(int $studentId): bool
+    {
+        return Subscription::with(['payments', 'lessonUsages'])->where('student_id', $studentId)->get()
+            ->contains(function ($subscription) {
+                $paid = (float) $subscription->payments->sum('amount');
+                $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * ((int) ($subscription->lesson_count ?? 0) > 0 ? intdiv($subscription->lessonUsages->count(), (int) $subscription->lesson_count) * (int) $subscription->lesson_count : $subscription->lessonUsages->count())
+                    : (float) $subscription->amount;
+                return ($gross - $paid) > 0.009;
+            });
+    }
+
+    private function studentsWithOutstandingSubscriptionBalance(): int
+    {
+        $subscriptions = Subscription::with(['payments', 'lessonUsages'])->get();
+        return $subscriptions->filter(function ($subscription) {
+            $paid = (float) $subscription->payments->sum('amount');
+            $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                ? (float) ($subscription->lesson_price ?? $subscription->amount) * ((int) ($subscription->lesson_count ?? 0) > 0 ? intdiv($subscription->lessonUsages->count(), (int) $subscription->lesson_count) * (int) $subscription->lesson_count : $subscription->lessonUsages->count())
+                : (float) $subscription->amount;
+            return ($gross - $paid) > 0.009;
+        })->pluck('student_id')->unique()->count();
+    }
+
     public function dashboard(Request $request)
     {
         $admin = in_array($request->user()->role, ['admin', 'super_admin', 'owner'], true);
+        if (!$admin) return ['academy_name' => 'Online School Academy', 'role' => $request->user()->role];
         $data = [
             'academy_name' => 'Online School Academy',
             'students' => Student::count(),
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
             'today_classes' => Schedule::whereDate('starts_at', now())->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'cancelled'))->count(),
-            'students_without_month_payment' => Student::where('status', 'active')
-                ->whereDoesntHave('payments', fn($q) => $q->whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()]))
-                ->count(),
+            'students_without_month_payment' => $this->studentsWithOutstandingSubscriptionBalance(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
@@ -63,7 +86,7 @@ class ApiController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'=>'required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','notes'=>'nullable',
+            'name'=>'required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','allow_lessons_with_debt'=>'nullable|boolean','notes'=>'nullable',
             'subjects'=>'nullable|array','subjects.*'=>'required|string|max:150',
         ]);
         $subjects = collect($data['subjects'] ?? [])->map(fn($v) => trim($v))->filter()->unique()->values()->all();
@@ -86,7 +109,7 @@ class ApiController extends Controller
     public function update(Request $request, Student $student)
     {
         $data = $request->validate([
-            'name'=>'sometimes|required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','notes'=>'nullable',
+            'name'=>'sometimes|required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','allow_lessons_with_debt'=>'nullable|boolean','notes'=>'nullable',
             'subjects'=>'nullable|array','subjects.*'=>'required|string|max:150',
         ]);
         $hasSubjects = array_key_exists('subjects', $data);
@@ -258,16 +281,21 @@ class ApiController extends Controller
     public function storeAttendance(Request $request)
     {
         $data=$request->validate(['student_id'=>'required|exists:students,id','teacher_id'=>'nullable|exists:teachers,id','schedule_id'=>'nullable|exists:schedules,id','lesson_id'=>'nullable|exists:lessons,id','date'=>'required|date','status'=>['required',Rule::in(['present','absent','late','excused'])],'notes'=>'nullable']);
+        if(in_array($data['status'],['present','late'],true)){$student=Student::findOrFail($data['student_id']);$alreadyCompleted=!empty($data['lesson_id'])&&Lesson::whereKey($data['lesson_id'])->value('status')==='completed';if(!$alreadyCompleted&&!$student->allow_lessons_with_debt&&$this->studentHasOutstandingSubscriptionBalance((int)$student->id))return response()->json(['success'=>false,'message'=>'لا يمكن تسجيل حضور لحصة جديدة مع وجود مديونية وفق سياسة الطالب.'],422);}
         if(!empty($data['lesson_id'])){$lesson=Lesson::with('group.students')->findOrFail($data['lesson_id']);if($lesson->type==='private'&&(int)$lesson->student_id!==(int)$data['student_id'])return response()->json(['message'=>'الطالب لا يخص هذه الحصة الخاصة.'],422);if($lesson->type==='group'&&(!$lesson->group||!$lesson->group->students->contains('id',(int)$data['student_id'])))return response()->json(['message'=>'الطالب ليس ضمن طلاب مجموعة هذه الحصة.'],422);if(!empty($data['teacher_id'])&&(int)$data['teacher_id']!==(int)$lesson->teacher_id)return response()->json(['message'=>'المدرس لا يطابق مدرس الحصة.'],422);$data['teacher_id']=$lesson->teacher_id;$lessonDate=$lesson->starts_at?->toDateString();if($lessonDate)$data['date']=$lessonDate;}
         $data['marked_at']=now(); return Attendance::updateOrCreate(['student_id'=>$data['student_id'],'date'=>$data['date'],'schedule_id'=>$data['schedule_id']??null,'lesson_id'=>$data['lesson_id']??null],$data);
     }
 
     public function subscriptions(Request $request)
     {
-        $query=Subscription::with(['student','group.teacher','group.students','payments'])->latest();
+        $query=Subscription::with(['student','group.teacher','group.students','payments','lessonUsages'])->withCount('lessonUsages')->latest();
         if($request->filled('from'))$query->whereDate('starts_on','>=',$request->date('from'));
         if($request->filled('to'))$query->whereDate('starts_on','<=',$request->date('to'));
-        return $query->paginate(50);
+        if($request->boolean('debtors_only')) {
+            $query->whereRaw("((CASE WHEN subscriptions.billing_type = 'per_lesson' THEN COALESCE(subscriptions.lesson_price, subscriptions.amount) * (CASE WHEN COALESCE(subscriptions.lesson_count, 0) > 0 THEN FLOOR((SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) / subscriptions.lesson_count) * subscriptions.lesson_count ELSE (SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) END) ELSE subscriptions.amount END) - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.subscription_id = subscriptions.id), 0)) > 0.009");
+            return $query->get();
+        }
+        return $query->paginate(min(100, max(1, $request->integer('per_page', 50))));
     }
 
     public function storeSubscription(Request $request)
@@ -290,7 +318,7 @@ class ApiController extends Controller
             $data['group_id'] = null;
             $data['billing_type'] = $data['billing_type'] ?? 'per_lesson';
             $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
-            if (($data['billing_type'] ?? 'per_lesson') !== 'monthly') { $data['billing_type'] = 'per_lesson'; $data['amount'] = $data['lesson_price']; $data['lesson_count'] = null; } else { $data['lesson_count'] = $data['lesson_count'] ?? 8; }
+            if (($data['billing_type'] ?? 'per_lesson') !== 'monthly') { $data['billing_type'] = 'per_lesson'; $data['amount'] = $data['lesson_price']; } else { $data['lesson_count'] = $data['lesson_count'] ?? 8; }
         } else {
             $data['service_type'] = 'group'; $data['billing_type'] = 'monthly';
             if (empty($data['group_id'])) return response()->json(['message'=>'اختر المجموعة المرتبط بها الطالب.'],422);
@@ -337,10 +365,10 @@ class ApiController extends Controller
         else { $from=$request->date('from')?->startOfDay()??now()->startOfYear()->startOfDay(); $to=$request->date('to')?->endOfDay()??now()->endOfMonth()->endOfDay(); }
         $income=Payment::whereBetween('paid_on',[$from,$to])->sum('amount');
         $expenses=Expense::whereBetween('spent_on',[$from->toDateString(),$to->toDateString()])->sum('amount');
-        $teacherDue=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
-        $teacherPaid=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
-        $supervisorDue=SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
-        $supervisorPaid=SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
+        $teacherDue=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('amount');
+        $teacherPaid=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
+        $supervisorDue=SupervisorDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('amount');
+        $supervisorPaid=SupervisorDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
         return ['from'=>$from->toDateString(),'to'=>$to->toDateString(),'month'=>$from->format('Y-m'),'income'=>$income,'expenses'=>$expenses,'teacher_dues'=>$teacherDue,'teacher_paid'=>$teacherPaid,'supervisor_dues'=>$supervisorDue,'supervisor_paid'=>$supervisorPaid,'net_operation'=>$income-$expenses];
     }
 }

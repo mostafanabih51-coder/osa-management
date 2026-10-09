@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../services/api_service.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
-  const SubscriptionsScreen({super.key});
+  final bool showDebtorsOnly;
+  const SubscriptionsScreen({super.key, this.showDebtorsOnly = false});
   @override
   State<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
 }
@@ -27,6 +28,39 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     return [];
   }
 
+  double outstanding(dynamic s) {
+    if (s is! Map) return 0;
+    final payments = list(s['payments']);
+    final paid = payments.fold<double>(0, (sum, p) =>
+        sum + (double.tryParse('${p is Map ? p['amount'] : 0}') ?? 0));
+    final usageCount = int.tryParse('${s['lesson_usages_count'] ?? list(s['lesson_usages']).length}') ?? 0;
+    final isPerLesson = '${s['billing_type'] ?? 'monthly'}' == 'per_lesson';
+    final price = double.tryParse('${s['lesson_price'] ?? s['amount'] ?? 0}') ?? 0;
+    final threshold = int.tryParse('${s['lesson_count'] ?? 0}') ?? 0;
+    final billableLessons = threshold > 0 ? (usageCount ~/ threshold) * threshold : usageCount;
+    final gross = isPerLesson ? price * billableLessons : (double.tryParse('${s['amount'] ?? 0}') ?? 0);
+    return gross > paid ? gross - paid : 0;
+  }
+
+  int usedLessons(dynamic s) =>
+      int.tryParse('${s is Map ? s['lesson_usages_count'] ?? list(s['lesson_usages']).length : 0}') ?? 0;
+
+  int remainingLessons(dynamic s) {
+    final count = int.tryParse('${s is Map ? s['lesson_count'] ?? '' : ''}') ?? 0;
+    final used = usedLessons(s);
+    if (s is Map && '${s['billing_type'] ?? 'monthly'}' == 'per_lesson') {
+      if (count <= 0) return 0;
+      final inCycle = used % count;
+      return inCycle == 0 ? 0 : count - inCycle;
+    }
+    final remaining = count - used;
+    return remaining > 0 ? remaining : 0;
+  }
+
+  List<dynamic> get displayedSubscriptions => widget.showDebtorsOnly
+      ? subscriptions.where((s) => outstanding(s) > 0.009).toList()
+      : subscriptions;
+
   int id(dynamic x) => int.tryParse('${x['id']}') ?? 0;
   String sub(dynamic x) => x is Map ? '${x['subject'] ?? x['name'] ?? ''}' : '$x';
 
@@ -46,7 +80,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   Future<void> load() async {
     if (mounted) setState(() => loading = true);
     try {
-      final r = await ApiService.get('subscriptions');
+      final r = await ApiService.get(widget.showDebtorsOnly ? 'subscriptions?debtors_only=1' : 'subscriptions');
       subscriptions = list(r);
     } catch (e) {
       msg(e);
@@ -185,12 +219,16 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                         decoration: const InputDecoration(labelText: 'سعر الحصة الخاصة *'),
                         validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل سعر الحصة' : null,
                       ),
-                    if (serviceType == 'private' && billingType == 'monthly')
+                    if (serviceType == 'private')
                       TextFormField(
                         controller: lessonCount,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'عدد الحصص شهريًا'),
-                        validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل عددًا صحيحًا' : null,
+                        decoration: InputDecoration(
+                          labelText: billingType == 'monthly' ? 'عدد حصص الباقة الشهرية' : 'عدد الحصص قبل التحصيل',
+                        ),
+                        validator: (v) => int.tryParse(v ?? '') == null || int.parse(v!) < 1
+                            ? 'أدخل عددًا صحيحًا أكبر من صفر'
+                            : null,
                       ),
                     if ((serviceType == 'private' && billingType == 'monthly') || serviceType == 'group')
                       TextFormField(
@@ -329,7 +367,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('الاشتراكات'),
+      title: Text(widget.showDebtorsOnly ? 'الاشتراكات غير المسددة' : 'الاشتراكات'),
       actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
     ),
     floatingActionButton: FloatingActionButton.extended(
@@ -341,23 +379,24 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         ? const Center(child: CircularProgressIndicator())
         : RefreshIndicator(
             onRefresh: load,
-            child: subscriptions.isEmpty
-                ? ListView(children: const [
-                    SizedBox(height: 180),
-                    Center(child: Text('لا توجد اشتراكات.')),
+            child: displayedSubscriptions.isEmpty
+                ? ListView(children: [
+                    const SizedBox(height: 180),
+                    Center(child: Text(widget.showDebtorsOnly ? 'لا توجد اشتراكات عليها مديونية.' : 'لا توجد اشتراكات.')),
                   ])
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
-                    itemCount: subscriptions.length,
+                    itemCount: displayedSubscriptions.length,
                     itemBuilder: (_, i) {
-                      final s = subscriptions[i];
+                      final s = displayedSubscriptions[i];
                       final student = s['student'];
                       return Card(
                         child: ListTile(
                           title: Text('${student?['name'] ?? 'طالب'}'),
                           subtitle: Text(
                             '${s['subject'] ?? ''} • ${s['service_type'] ?? 'group'} • ${s['amount'] ?? 0}\n'
-                            '${s['starts_on'] ?? ''} → ${s['ends_on'] ?? ''} • ${s['status'] ?? ''}',
+                            '${s['starts_on'] ?? ''} → ${s['ends_on'] ?? ''} • ${s['status'] ?? ''}\\n'
+                            'الحصص المستخدمة: ${usedLessons(s)} • ${(s['billing_type'] ?? 'monthly') == 'per_lesson' ? 'الحصص حتى التحصيل' : 'المتبقي من الباقة'}: ${remainingLessons(s)} • المديونية: ${outstanding(s).toStringAsFixed(2)}',
                           ),
                           isThreeLine: true,
                           trailing: Row(

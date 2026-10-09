@@ -41,6 +41,26 @@ class ManagementCrudController extends Controller
             'service_type'=>'nullable|in:private,group'
         ]);
 
+        $hasFinancialHistory = $subscription->payments()->exists() || $subscription->lessonUsages()->exists();
+        $lockedFields = ['student_id','group_id','subject','amount','starts_on','ends_on','billing_type','lesson_price','lesson_count','service_type'];
+        if ($hasFinancialHistory) {
+            foreach ($lockedFields as $field) {
+                if (!array_key_exists($field, $d)) continue;
+                $before = $subscription->{$field};
+                $after = $d[$field];
+                if (in_array($field, ['amount', 'lesson_price'], true)) {
+                    $changed = abs((float) ($after ?? 0) - (float) ($before ?? 0)) > 0.009;
+                } elseif (in_array($field, ['student_id', 'group_id', 'lesson_count'], true)) {
+                    $changed = (int) ($after ?? 0) !== (int) ($before ?? 0);
+                } else {
+                    $changed = (string) ($after ?? '') !== (string) ($before ?? '');
+                }
+                if ($changed) {
+                    return response()->json(['success'=>false,'message'=>'لا يمكن تغيير بيانات التسعير أو ربط الاشتراك بعد تسجيل دفعات أو حصص؛ أنشئ اشتراكًا جديدًا للتغييرات المستقبلية.'],422);
+                }
+            }
+        }
+
         $start=$d['starts_on'] ?? optional($subscription->starts_on)->format('Y-m-d');
         $end=$d['ends_on'] ?? optional($subscription->ends_on)->format('Y-m-d');
         if ($start && $end && strtotime($end) < strtotime($start)) {
@@ -57,7 +77,7 @@ class ManagementCrudController extends Controller
                 $d['billing_type']='monthly'; $d['amount']=$d['amount'] ?? $subscription->amount;
                 $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count ?? 8;
             } else {
-                $d['billing_type']='per_lesson'; $d['amount']=$price; $d['lesson_count']=null;
+                $d['billing_type']='per_lesson'; $d['amount']=$price; $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count;
             }
         } else {
             $d['billing_type']='monthly'; $d['lesson_price']=null;
@@ -81,6 +101,10 @@ class ManagementCrudController extends Controller
 
     public function destroySubscription(Subscription $subscription)
     {
+        if ($subscription->payments()->exists() || $subscription->lessonUsages()->exists()) {
+            $subscription->update(['status'=>'inactive']);
+            return response()->json(['success'=>true,'message'=>'تم إيقاف الاشتراك وأرشفة سجله؛ لا يمكن حذفه بعد وجود دفعات أو حصص مرتبطة.','data'=>$subscription->fresh()],200);
+        }
         $subscription->delete();
         return ['success'=>true];
     }

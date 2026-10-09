@@ -82,6 +82,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
     final parent = TextEditingController(text: '${existing?['parent_name'] ?? ''}');
     final grade = TextEditingController(text: '${existing?['grade'] ?? ''}');
     String curriculum = '${existing?['curriculum'] ?? 'مصري'}';
+    bool allowLessonsWithDebt = existing?['allow_lessons_with_debt'] != false;
     final selected = <String>{
       ...list(existing?['subjects'])
           .map(subjectName)
@@ -131,6 +132,13 @@ class _StudentsScreenState extends State<StudentsScreen> {
                             DropdownMenuItem(value: 'لغات', child: Text('لغات')),
                           ],
                           onChanged: (v) { if (v != null) setDialogState(() => curriculum = v); },
+                        ),
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          value: allowLessonsWithDebt,
+                          title: const Text('السماح باستمرار الحصص مع وجود مديونية'),
+                          subtitle: const Text('عند الإيقاف، يمنع النظام جدولة حصة خاصة جديدة وتسجيل الحضور حتى سداد المديونية.'),
+                          onChanged: (value) => setDialogState(() => allowLessonsWithDebt = value),
                         ),
                         const SizedBox(height: 12),
                         const Text(
@@ -187,6 +195,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
           'grade': grade.text.trim(),
           'curriculum': curriculum,
           'status': 'active',
+          'allow_lessons_with_debt': allowLessonsWithDebt,
           'subjects': selected.toList(),
         };
         if (existing == null) {
