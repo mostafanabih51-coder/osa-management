@@ -2,7 +2,27 @@
 namespace App\Http\Controllers;
 use App\Models\Bonus; use App\Models\Expense; use App\Models\SupervisorDue; use App\Models\TeacherLessonDue; use App\Models\WithdrawalRequest; use App\Models\WithdrawalSetting; use Illuminate\Http\Request; use Illuminate\Support\Facades\DB; use Illuminate\Validation\Rule;
 class FinanceController extends Controller{
-public function teacherDues(Request $r){$q=TeacherLessonDue::with(['teacher','lesson'])->whereHas('lesson',fn($l)=>$l->where('status','completed'))->latest();if($r->filled('teacher_id'))$q->where('teacher_id',$r->integer('teacher_id'));if($r->filled('status'))$q->where('status',$r->string('status'));return response()->json(['success'=>true,'data'=>$q->get()]);}
+public function ownWithdrawals(Request $r)
+ {
+  [$type,$id]=$this->currentRecipient($r);
+  return response()->json(['success'=>true,'data'=>WithdrawalRequest::where('recipient_type',$type)->where('recipient_id',$id)->latest()->get()]);
+ }
+ public function storeOwnWithdrawal(Request $r)
+ {
+  [$type,$id]=$this->currentRecipient($r);
+  $r->merge(['recipient_type'=>$type,'recipient_id'=>$id]);
+  return $this->storeWithdrawal($r);
+ }
+ private function currentRecipient(Request $r): array
+ {
+  $user=$r->user();
+  if($user->role==='teacher'){$id=\App\Models\Teacher::where('user_id',$user->id)->value('id');$type='teacher';}
+  elseif($user->role==='supervisor'){$id=\App\Models\Supervisor::where('user_id',$user->id)->value('id');$type='supervisor';}
+  else abort(403,'هذه الخدمة متاحة لحساب المدرس أو المشرف فقط.');
+  abort_unless($id,403,'الحساب غير مرتبط بملف مدرس أو مشرف.');
+  return [$type,(int)$id];
+ }
+ public function teacherDues(Request $r){$q=TeacherLessonDue::with(['teacher','lesson'])->whereHas('lesson',fn($l)=>$l->where('status','completed'))->latest();if($r->filled('teacher_id'))$q->where('teacher_id',$r->integer('teacher_id'));if($r->filled('status'))$q->where('status',$r->string('status'));return response()->json(['success'=>true,'data'=>$q->get()]);}
 public function supervisorDues(Request $r){$q=SupervisorDue::with(['supervisor','lesson'])->whereHas('lesson',fn($l)=>$l->where('status','completed'))->latest();if($r->filled('supervisor_id'))$q->where('supervisor_id',$r->integer('supervisor_id'));if($r->filled('status'))$q->where('status',$r->string('status'));return response()->json(['success'=>true,'data'=>$q->get()]);}
 public function bonuses(Request $r){$q=Bonus::latest();if($r->filled('recipient_type'))$q->where('recipient_type',$r->string('recipient_type'));if($r->filled('recipient_id'))$q->where('recipient_id',$r->integer('recipient_id'));return response()->json(['success'=>true,'data'=>$q->get()]);}
 public function storeBonus(Request $r){$d=$r->validate(['recipient_type'=>['required',Rule::in(['teacher','supervisor'])],'recipient_id'=>'required|integer','name'=>'required|string|max:255','amount'=>'required|numeric|min:0.01','bonus_date'=>'required|date','notes'=>'nullable|string']);$recipientModel=$d['recipient_type']==='teacher'?'App\\Models\\Teacher':'App\\Models\\Supervisor';if(!$recipientModel::whereKey($d['recipient_id'])->exists())return response()->json(['success'=>false,'message'=>'المستحق المحدد غير موجود.'],422);$d['created_by']=$r->user()->id;return DB::transaction(function()use($d){$bonus=Bonus::create($d);Expense::create(['category'=>$d['recipient_type']==='teacher'?'مكافأة مدرس':'مكافأة مشرف','amount'=>$d['amount'],'spent_on'=>$d['bonus_date'],'description'=>'مكافأة: '.$d['name'],'created_by'=>$d['created_by']]);return response()->json(['success'=>true,'data'=>$bonus],201);});}
