@@ -355,7 +355,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   @override
   Widget build(BuildContext context) => Scaffold(
     appBar: AppBar(
-      title: const Text('الاشتراكات'),
+      title: Text(widget.showDebtorsOnly ? 'الاشتراكات غير المسددة' : 'الاشتراكات'),
       actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))],
     ),
     floatingActionButton: FloatingActionButton.extended(
@@ -370,7 +370,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
             child: displayedSubscriptions.isEmpty
                 ? ListView(children: const [
                     SizedBox(height: 180),
-                    Center(child: Text('لا توجد اشتراكات.')),
+                    Center(child: Text(widget.showDebtorsOnly ? 'لا توجد اشتراكات عليها مديونية.' : 'لا توجد اشتراكات.')),
                   ])
                 : ListView.builder(
                     padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
@@ -383,7 +383,8 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           title: Text('${student?['name'] ?? 'طالب'}'),
                           subtitle: Text(
                             '${s['subject'] ?? ''} • ${s['service_type'] ?? 'group'} • ${s['amount'] ?? 0}\n'
-                            '${s['starts_on'] ?? ''} → ${s['ends_on'] ?? ''} • ${s['status'] ?? ''}',
+                            '${s['starts_on'] ?? ''} → ${s['ends_on'] ?? ''} • ${s['status'] ?? ''}\\n'
+                            'الحصص المستخدمة: ${usedLessons(s)} • المتبقي من الباقة: ${remainingLessons(s)} • المديونية: ${outstanding(s).toStringAsFixed(2)}',
                           ),
                           isThreeLine: true,
                           trailing: Row(
