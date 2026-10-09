@@ -20,6 +20,18 @@ class ApiController extends Controller
 
     public function logout(Request $request) { $request->user()->currentAccessToken()?->delete(); return ['message' => 'تم تسجيل الخروج']; }
 
+    private function studentsWithOutstandingSubscriptionBalance(): int
+    {
+        $subscriptions = Subscription::with(['payments', 'lessonUsages'])->get();
+        return $subscriptions->filter(function ($subscription) {
+            $paid = (float) $subscription->payments->sum('amount');
+            $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                ? (float) ($subscription->lesson_price ?? $subscription->amount) * $subscription->lessonUsages->count()
+                : (float) $subscription->amount;
+            return ($gross - $paid) > 0.009;
+        })->pluck('student_id')->unique()->count();
+    }
+
     public function dashboard(Request $request)
     {
         $admin = in_array($request->user()->role, ['admin', 'super_admin', 'owner'], true);
@@ -29,9 +41,7 @@ class ApiController extends Controller
             'active_students' => Student::where('status', 'active')->count(),
             'teachers' => Teacher::where('status', 'active')->count(),
             'today_classes' => Schedule::whereDate('starts_at', now())->where(fn($q) => $q->whereNull('status')->orWhere('status', '!=', 'cancelled'))->count(),
-            'students_without_month_payment' => Student::where('status', 'active')
-                ->whereDoesntHave('payments', fn($q) => $q->whereBetween('paid_on', [now()->startOfMonth(), now()->endOfMonth()]))
-                ->count(),
+            'students_without_month_payment' => $this->studentsWithOutstandingSubscriptionBalance(),
             'today_attendance' => Attendance::whereDate('date', today())->count(),
             'expiring_7_days' => Subscription::whereBetween('ends_on', [today(), today()->addDays(7)])->where('status', 'active')->count(),
         ];
@@ -264,7 +274,7 @@ class ApiController extends Controller
 
     public function subscriptions(Request $request)
     {
-        $query=Subscription::with(['student','group.teacher','group.students','payments'])->latest();
+        $query=Subscription::with(['student','group.teacher','group.students','payments','lessonUsages'])->withCount('lessonUsages')->latest();
         if($request->filled('from'))$query->whereDate('starts_on','>=',$request->date('from'));
         if($request->filled('to'))$query->whereDate('starts_on','<=',$request->date('to'));
         return $query->paginate(50);
