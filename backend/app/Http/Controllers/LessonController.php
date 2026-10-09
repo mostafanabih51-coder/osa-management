@@ -131,6 +131,7 @@ class LessonController extends Controller
                 ->where('subject', $lesson->subject)
                 ->where('service_type', 'private')
                 ->whereIn('status', ['active', 'expired'])
+                ->whereDate('starts_on', '<=', $lessonDate)
                 ->orderBy('starts_on')->orderBy('id');
 
             $chosen = null;
