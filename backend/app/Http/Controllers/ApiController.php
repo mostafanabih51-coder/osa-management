@@ -292,7 +292,7 @@ class ApiController extends Controller
         if($request->filled('from'))$query->whereDate('starts_on','>=',$request->date('from'));
         if($request->filled('to'))$query->whereDate('starts_on','<=',$request->date('to'));
         if($request->boolean('debtors_only')) {
-            $query->whereRaw("((CASE WHEN billing_type = 'per_lesson' THEN COALESCE(lesson_price, amount) * (SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) ELSE amount END) - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.subscription_id = subscriptions.id), 0)) > 0.009");
+            $query->whereRaw("((CASE WHEN subscriptions.billing_type = 'per_lesson' THEN COALESCE(subscriptions.lesson_price, subscriptions.amount) * (CASE WHEN COALESCE(subscriptions.lesson_count, 0) > 0 THEN FLOOR((SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) / subscriptions.lesson_count) * subscriptions.lesson_count ELSE (SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) END) ELSE subscriptions.amount END) - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.subscription_id = subscriptions.id), 0)) > 0.009");
             return $query->get();
         }
         return $query->paginate(min(100, max(1, $request->integer('per_page', 50))));
