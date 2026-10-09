@@ -290,7 +290,11 @@ class ApiController extends Controller
         $query=Subscription::with(['student','group.teacher','group.students','payments','lessonUsages'])->withCount('lessonUsages')->latest();
         if($request->filled('from'))$query->whereDate('starts_on','>=',$request->date('from'));
         if($request->filled('to'))$query->whereDate('starts_on','<=',$request->date('to'));
-        return $query->paginate(50);
+        if($request->boolean('debtors_only')) {
+            $query->whereRaw("((CASE WHEN billing_type = 'per_lesson' THEN COALESCE(lesson_price, amount) * (SELECT COUNT(*) FROM subscription_lesson_usages slu WHERE slu.subscription_id = subscriptions.id) ELSE amount END) - COALESCE((SELECT SUM(p.amount) FROM payments p WHERE p.subscription_id = subscriptions.id), 0)) > 0.009");
+            return $query->get();
+        }
+        return $query->paginate(min(100, max(1, $request->integer('per_page', 50))));
     }
 
     public function storeSubscription(Request $request)
