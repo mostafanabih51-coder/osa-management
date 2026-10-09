@@ -72,7 +72,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   Future<void> load() async {
     if (mounted) setState(() => loading = true);
     try {
-      final r = await ApiService.get('subscriptions');
+      final r = await ApiService.get(widget.showDebtorsOnly ? 'subscriptions?debtors_only=1' : 'subscriptions');
       subscriptions = list(r);
     } catch (e) {
       msg(e);
