@@ -1,7 +1,7 @@
 <?php
 namespace App\Http\Controllers;
 
-use App\Models\{Attendance,Group,Lesson,LessonSetting,StudentSubject,Subscription,SubscriptionLessonUsage,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
+use App\Models\{Attendance,Group,Lesson,LessonSetting,Student,StudentSubject,Subscription,SubscriptionLessonUsage,SupervisorDue,TeacherLessonDue,TeacherStudentSubject};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
@@ -37,6 +37,7 @@ class LessonController extends Controller
     {
         $d=$r->validate(['type'=>['required',Rule::in(['group','private'])],'teacher_id'=>'required|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'required|string|max:255','starts_at'=>'required|date','ends_at'=>'required|date|after:starts_at','zoom_url'=>'nullable|string','status'=>['nullable',Rule::in(['scheduled','completed','cancelled'])],'teacher_rate'=>'nullable|numeric|min:0','supervisor_rate'=>'nullable|numeric|min:0','notes'=>'nullable|string']);
         $this->relations($d);
+        if($d['type']==='private' && !Student::whereKey($d['student_id'])->value('allow_lessons_with_debt') && $this->studentOutstandingBalance((int)$d['student_id']) > 0.009) return response()->json(['success'=>false,'message'=>'تم إيقاف الحصص الجديدة لهذا الطالب بسبب وجود مديونية؛ سجّل السداد أو غيّر سياسة الطالب أولًا.'],422);
         if($d['type']==='group') $d['student_id']=null; else $d['group_id']=null;
         $assignment=$d['type']==='private'?TeacherStudentSubject::where(['teacher_id'=>$d['teacher_id'],'student_id'=>$d['student_id'],'subject'=>$d['subject'],'status'=>'active'])->first():null;
         $g=$d['type']==='group'?Group::find($d['group_id']):null;
@@ -85,6 +86,18 @@ class LessonController extends Controller
         if($paid)return response()->json(['success'=>false,'message'=>'لا يمكن حذف حصة تم صرف مستحقاتها.'],422);
         DB::transaction(function()use($lesson){TeacherLessonDue::where('lesson_id',$lesson->id)->delete();SupervisorDue::where('lesson_id',$lesson->id)->delete();$lesson->delete();});
         return ['success'=>true];
+    }
+
+    private function studentOutstandingBalance(int $studentId): float
+    {
+        return Subscription::with(['payments', 'lessonUsages'])->where('student_id', $studentId)->get()
+            ->sum(function ($subscription) {
+                $paid = (float) $subscription->payments->sum('amount');
+                $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * $subscription->lessonUsages->count()
+                    : (float) $subscription->amount;
+                return max(0, $gross - $paid);
+            });
     }
 
     private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false): void
