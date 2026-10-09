@@ -45,7 +45,13 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
 
   int remainingLessons(dynamic s) {
     final count = int.tryParse('${s is Map ? s['lesson_count'] ?? '' : ''}') ?? 0;
-    final remaining = count - usedLessons(s);
+    final used = usedLessons(s);
+    if (s is Map && '${s['billing_type'] ?? 'monthly'}' == 'per_lesson') {
+      if (count <= 0) return 0;
+      final inCycle = used % count;
+      return inCycle == 0 ? 0 : count - inCycle;
+    }
+    final remaining = count - used;
     return remaining > 0 ? remaining : 0;
   }
 
@@ -388,7 +394,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                           subtitle: Text(
                             '${s['subject'] ?? ''} • ${s['service_type'] ?? 'group'} • ${s['amount'] ?? 0}\n'
                             '${s['starts_on'] ?? ''} → ${s['ends_on'] ?? ''} • ${s['status'] ?? ''}\\n'
-                            'الحصص المستخدمة: ${usedLessons(s)} • المتبقي من الباقة: ${remainingLessons(s)} • المديونية: ${outstanding(s).toStringAsFixed(2)}',
+                            'الحصص المستخدمة: ${usedLessons(s)} • ${(s['billing_type'] ?? 'monthly') == 'per_lesson' ? 'الحصص حتى التحصيل' : 'المتبقي من الباقة'}: ${remainingLessons(s)} • المديونية: ${outstanding(s).toStringAsFixed(2)}',
                           ),
                           isThreeLine: true,
                           trailing: Row(
