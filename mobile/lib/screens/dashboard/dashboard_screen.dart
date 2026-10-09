@@ -51,7 +51,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         menuItem(Icons.bar_chart,'التقارير',const ReportsScreen()),
         menuItem(Icons.admin_panel_settings,'المستخدمون والصلاحيات',const UsersScreen()),
       ]
-    ]
+    ];
     Widget body;
     if(loading) body=const Center(child:CircularProgressIndicator());
     else if(error!=null) body=Center(child:Padding(padding:const EdgeInsets.all(24),child:Column(mainAxisSize:MainAxisSize.min,children:[Text(error!,textAlign:TextAlign.center),const SizedBox(height:12),FilledButton(onPressed:loadDashboard,child:const Text('إعادة المحاولة'))])));
