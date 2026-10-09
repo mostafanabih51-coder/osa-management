@@ -2,21 +2,22 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
-/// Brand colors sampled from the official Online School Academy reference artwork.
+/// Official Online School Academy palette.
 class AppColors {
   static const navy = Color(0xFF384660);
-  static const pink = Color(0xFFD75F86);
   static const magenta = Color(0xFFB43A6C);
   static const gold = Color(0xFFFFC822);
-  static const background = Color(0xFFF4F5F8);
-  static const surface = Color(0xFFFFFFFF);
-  static const text = Color(0xFF202B3B);
-  static const muted = Color(0xFF727C8D);
-  static const border = Color(0x1F384660);
-  static const glassWhite = Color(0xD9FFFFFF);
+  static const background = navy;
+  static const surface = Color(0xFF45536D);
+  static const surfaceDeep = Color(0xFF303D55);
+  static const text = Color(0xFFF1F3F8);
+  static const muted = Color(0xFFD6DCE7);
+  static const border = Color(0x667D8AA0);
+  static const glassWhite = Color(0x1FFFFFFF);
 
-  // Compatibility aliases used by existing screens.
-  static const red = pink;
+  // Compatibility aliases used by existing screens. Avoid the former pink.
+  static const red = magenta;
+  static const pink = magenta;
   static const black = navy;
   static const white = Colors.white;
 }
@@ -24,29 +25,41 @@ class AppColors {
 class AppTheme {
   static ThemeData light() {
     final scheme = ColorScheme(
-      brightness: Brightness.light,
-      primary: AppColors.navy,
+      brightness: Brightness.dark,
+      primary: AppColors.magenta,
       onPrimary: Colors.white,
-      secondary: AppColors.pink,
-      onSecondary: Colors.white,
-      tertiary: AppColors.gold,
-      onTertiary: AppColors.navy,
-      error: const Color(0xFFB42332),
-      onError: Colors.white,
+      secondary: AppColors.gold,
+      onSecondary: AppColors.navy,
+      tertiary: AppColors.surface,
+      onTertiary: Colors.white,
+      error: const Color(0xFFFF7B86),
+      onError: AppColors.navy,
       surface: AppColors.surface,
       onSurface: AppColors.text,
     );
 
     return ThemeData(
       useMaterial3: true,
+      brightness: Brightness.dark,
       colorScheme: scheme,
       scaffoldBackgroundColor: AppColors.background,
+      canvasColor: AppColors.background,
+      dividerColor: AppColors.border,
+      textTheme: ThemeData.dark().textTheme.apply(
+            bodyColor: AppColors.text,
+            displayColor: AppColors.text,
+          ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.navy,
         foregroundColor: Colors.white,
         centerTitle: false,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
+        titleTextStyle: TextStyle(
+          color: Colors.white,
+          fontSize: 19,
+          fontWeight: FontWeight.w700,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surface,
@@ -59,10 +72,12 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: Colors.white,
+        fillColor: AppColors.surfaceDeep,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
         labelStyle: const TextStyle(color: AppColors.muted),
-        prefixIconColor: AppColors.navy,
+        hintStyle: const TextStyle(color: AppColors.muted),
+        prefixIconColor: AppColors.gold,
+        suffixIconColor: AppColors.muted,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: AppColors.border),
@@ -73,46 +88,77 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.pink, width: 1.6),
+          borderSide: const BorderSide(color: AppColors.gold, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFB42332)),
+          borderSide: const BorderSide(color: Color(0xFFFF7B86)),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.navy,
-          foregroundColor: Colors.white,
+          backgroundColor: AppColors.gold,
+          foregroundColor: AppColors.navy,
           minimumSize: const Size(48, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.navy,
+          foregroundColor: AppColors.text,
           side: const BorderSide(color: AppColors.border),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
       snackBarTheme: SnackBarThemeData(
+        backgroundColor: AppColors.surfaceDeep,
+        contentTextStyle: const TextStyle(color: AppColors.text),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       navigationBarTheme: NavigationBarThemeData(
-        backgroundColor: Colors.white,
-        indicatorColor: AppColors.pink.withValues(alpha: 0.16),
+        backgroundColor: AppColors.surfaceDeep,
+        indicatorColor: AppColors.magenta.withValues(alpha: 0.65),
         labelTextStyle: const WidgetStatePropertyAll(
-          TextStyle(fontWeight: FontWeight.w600, fontSize: 12),
+          TextStyle(fontWeight: FontWeight.w600, fontSize: 12, color: AppColors.text),
         ),
       ),
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.gold,
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? AppColors.magenta : AppColors.surface),
+        checkColor: const WidgetStatePropertyAll(Colors.white),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? AppColors.gold : AppColors.muted),
+        trackColor: WidgetStateProperty.resolveWith((states) =>
+            states.contains(WidgetState.selected) ? AppColors.magenta : AppColors.surfaceDeep),
+      ),
       dividerTheme: const DividerThemeData(color: AppColors.border, thickness: 1),
+      listTileTheme: const ListTileThemeData(
+        iconColor: AppColors.gold,
+        textColor: AppColors.text,
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titleTextStyle: const TextStyle(color: AppColors.text, fontSize: 20, fontWeight: FontWeight.w700),
+        contentTextStyle: const TextStyle(color: AppColors.muted),
+      ),
+      popupMenuTheme: const PopupMenuThemeData(
+        color: AppColors.surfaceDeep,
+        textStyle: TextStyle(color: AppColors.text),
+      ),
     );
   }
 }
 
-/// Frosted-glass panel. Keep blur localized to this rounded surface for performance.
+/// A restrained translucent overlay for screens that explicitly need a glass accent.
+/// Prefer solid brand colors for dashboard action cards.
 class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -126,8 +172,8 @@ class GlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
-    this.blur = 14,
-    this.tint = const Color(0x24FFFFFF),
+    this.blur = 10,
+    this.tint = const Color(0x20FFFFFF),
     this.borderColor = const Color(0x66FFFFFF),
   });
 
@@ -176,7 +222,7 @@ class _AnimatedPressableState extends State<AnimatedPressable> {
   Widget build(BuildContext context) {
     return AnimatedScale(
       scale: _pressed ? 0.985 : 1,
-      duration: const Duration(milliseconds: 120),
+      duration: const Duration(milliseconds: 130),
       curve: Curves.easeOutCubic,
       child: Material(
         color: Colors.transparent,
