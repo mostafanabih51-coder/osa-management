@@ -81,13 +81,17 @@ class LessonController extends Controller
         if(strtotime($d['ends_at']??$lesson->ends_at)<=strtotime($d['starts_at']??$lesson->starts_at)) return response()->json(['success'=>false,'message'=>'نهاية الحصة يجب أن تكون بعد البداية.'],422);
         if($e['type']==='group')$d['student_id']=null;else$d['group_id']=null;
         if(isset($d['teacher_rate']))$d['teacher_due']=$d['teacher_rate']; if(isset($d['supervisor_rate']))$d['supervisor_due']=$d['supervisor_rate'];
-        $wasCompleted = $lesson->status === 'completed';
-        DB::transaction(function()use($lesson,$d,$e,$td,$sd,$wasCompleted){
+        DB::transaction(function()use($lesson,$d,$e){
+            // Serialize concurrent edits/completion requests against the persisted lesson state.
+            $lesson=Lesson::whereKey($lesson->id)->lockForUpdate()->firstOrFail();
+            $transitionedToCompleted=$lesson->status!=='completed' && (($d['status']??$lesson->status)==='completed');
+            $td=TeacherLessonDue::where('lesson_id',$lesson->id)->lockForUpdate()->first();
+            $sd=SupervisorDue::where('lesson_id',$lesson->id)->lockForUpdate()->first();
             $lesson->update($d);
             if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}
             if($lesson->supervisor_id){if(!$sd && $lesson->status==='completed')SupervisorDue::firstOrCreate(['lesson_id'=>$lesson->id],['supervisor_id'=>$lesson->supervisor_id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif($sd && (float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd && (float)$sd->paid_amount===0){$sd->delete();}
             $lesson->refresh();
-            if(!$wasCompleted && $lesson->status==='completed') {
+            if($transitionedToCompleted && $lesson->status==='completed') {
                 $month=$lesson->starts_at?->format('Y-m');
                 if($lesson->type==='private' && $lesson->student_id) $this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$month);
                 if($lesson->type==='group') {
@@ -124,7 +128,8 @@ class LessonController extends Controller
 
     private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false, ?string $planMonth = null): void
     {
-        $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->first();
+        // Lock the plan row so concurrent lesson completions cannot lose counter increments.
+        $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->lockForUpdate()->first();
         if(!$plan)return;
         $type=$plan->plan_type??'monthly';$month=$planMonth ?? now()->format('Y-m');
         if($type==='monthly' && $plan->plan_month!==$month && ($resetOnMonthChange || empty($plan->plan_month) || (int)$plan->completed_lessons >= (int)$plan->monthly_lessons)){$plan->plan_month=$month;$plan->completed_lessons=0;}
