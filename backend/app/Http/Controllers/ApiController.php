@@ -317,7 +317,7 @@ class ApiController extends Controller
             $data['group_id'] = null;
             $data['billing_type'] = $data['billing_type'] ?? 'per_lesson';
             $data['lesson_price'] = $data['lesson_price'] ?? $data['amount'];
-            if (($data['billing_type'] ?? 'per_lesson') !== 'monthly') { $data['billing_type'] = 'per_lesson'; $data['amount'] = $data['lesson_price']; $data['lesson_count'] = null; } else { $data['lesson_count'] = $data['lesson_count'] ?? 8; }
+            if (($data['billing_type'] ?? 'per_lesson') !== 'monthly') { $data['billing_type'] = 'per_lesson'; $data['amount'] = $data['lesson_price']; } else { $data['lesson_count'] = $data['lesson_count'] ?? 8; }
         } else {
             $data['service_type'] = 'group'; $data['billing_type'] = 'monthly';
             if (empty($data['group_id'])) return response()->json(['message'=>'اختر المجموعة المرتبط بها الطالب.'],422);
