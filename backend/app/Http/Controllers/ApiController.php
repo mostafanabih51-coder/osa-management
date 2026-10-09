@@ -347,10 +347,10 @@ class ApiController extends Controller
         else { $from=$request->date('from')?->startOfDay()??now()->startOfYear()->startOfDay(); $to=$request->date('to')?->endOfDay()??now()->endOfMonth()->endOfDay(); }
         $income=Payment::whereBetween('paid_on',[$from,$to])->sum('amount');
         $expenses=Expense::whereBetween('spent_on',[$from->toDateString(),$to->toDateString()])->sum('amount');
-        $teacherDue=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
-        $teacherPaid=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
-        $supervisorDue=SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('amount');
-        $supervisorPaid=SupervisorDue::whereHas('lesson',fn($q)=>$q->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
+        $teacherDue=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('amount');
+        $teacherPaid=TeacherLessonDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
+        $supervisorDue=SupervisorDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('amount');
+        $supervisorPaid=SupervisorDue::whereHas('lesson',fn($q)=>$q->where('status','completed')->whereBetween('starts_at',[$from,$to]))->sum('paid_amount');
         return ['from'=>$from->toDateString(),'to'=>$to->toDateString(),'month'=>$from->format('Y-m'),'income'=>$income,'expenses'=>$expenses,'teacher_dues'=>$teacherDue,'teacher_paid'=>$teacherPaid,'supervisor_dues'=>$supervisorDue,'supervisor_paid'=>$supervisorPaid,'net_operation'=>$income-$expenses];
     }
 }
