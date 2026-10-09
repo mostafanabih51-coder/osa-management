@@ -36,7 +36,9 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
     final usageCount = int.tryParse('${s['lesson_usages_count'] ?? list(s['lesson_usages']).length}') ?? 0;
     final isPerLesson = '${s['billing_type'] ?? 'monthly'}' == 'per_lesson';
     final price = double.tryParse('${s['lesson_price'] ?? s['amount'] ?? 0}') ?? 0;
-    final gross = isPerLesson ? price * usageCount : (double.tryParse('${s['amount'] ?? 0}') ?? 0);
+    final threshold = int.tryParse('${s['lesson_count'] ?? 0}') ?? 0;
+    final billableLessons = threshold > 0 ? (usageCount ~/ threshold) * threshold : usageCount;
+    final gross = isPerLesson ? price * billableLessons : (double.tryParse('${s['amount'] ?? 0}') ?? 0);
     return gross > paid ? gross - paid : 0;
   }
 
