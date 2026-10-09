@@ -67,7 +67,7 @@ class ManagementCrudController extends Controller
                 $d['billing_type']='monthly'; $d['amount']=$d['amount'] ?? $subscription->amount;
                 $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count ?? 8;
             } else {
-                $d['billing_type']='per_lesson'; $d['amount']=$price; $d['lesson_count']=null;
+                $d['billing_type']='per_lesson'; $d['amount']=$price; $d['lesson_count']=$d['lesson_count'] ?? $subscription->lesson_count;
             }
         } else {
             $d['billing_type']='monthly'; $d['lesson_price']=null;
