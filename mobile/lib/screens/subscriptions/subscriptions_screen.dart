@@ -368,8 +368,8 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         : RefreshIndicator(
             onRefresh: load,
             child: displayedSubscriptions.isEmpty
-                ? ListView(children: const [
-                    SizedBox(height: 180),
+                ? ListView(children: [
+                    const SizedBox(height: 180),
                     Center(child: Text(widget.showDebtorsOnly ? 'لا توجد اشتراكات عليها مديونية.' : 'لا توجد اشتراكات.')),
                   ])
                 : ListView.builder(
