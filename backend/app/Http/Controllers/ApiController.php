@@ -20,6 +20,18 @@ class ApiController extends Controller
 
     public function logout(Request $request) { $request->user()->currentAccessToken()?->delete(); return ['message' => 'تم تسجيل الخروج']; }
 
+    private function studentHasOutstandingSubscriptionBalance(int $studentId): bool
+    {
+        return Subscription::with(['payments', 'lessonUsages'])->where('student_id', $studentId)->get()
+            ->contains(function ($subscription) {
+                $paid = (float) $subscription->payments->sum('amount');
+                $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * $subscription->lessonUsages->count()
+                    : (float) $subscription->amount;
+                return ($gross - $paid) > 0.009;
+            });
+    }
+
     private function studentsWithOutstandingSubscriptionBalance(): int
     {
         $subscriptions = Subscription::with(['payments', 'lessonUsages'])->get();
@@ -268,6 +280,7 @@ class ApiController extends Controller
     public function storeAttendance(Request $request)
     {
         $data=$request->validate(['student_id'=>'required|exists:students,id','teacher_id'=>'nullable|exists:teachers,id','schedule_id'=>'nullable|exists:schedules,id','lesson_id'=>'nullable|exists:lessons,id','date'=>'required|date','status'=>['required',Rule::in(['present','absent','late','excused'])],'notes'=>'nullable']);
+        if(in_array($data['status'],['present','late'],true)){$student=Student::findOrFail($data['student_id']);if(!$student->allow_lessons_with_debt && $this->studentHasOutstandingSubscriptionBalance((int)$student->id))return response()->json(['success'=>false,'message'=>'لا يمكن تسجيل حضور لحصة جديدة مع وجود مديونية وفق سياسة الطالب.'],422);}
         if(!empty($data['lesson_id'])){$lesson=Lesson::with('group.students')->findOrFail($data['lesson_id']);if($lesson->type==='private'&&(int)$lesson->student_id!==(int)$data['student_id'])return response()->json(['message'=>'الطالب لا يخص هذه الحصة الخاصة.'],422);if($lesson->type==='group'&&(!$lesson->group||!$lesson->group->students->contains('id',(int)$data['student_id'])))return response()->json(['message'=>'الطالب ليس ضمن طلاب مجموعة هذه الحصة.'],422);if(!empty($data['teacher_id'])&&(int)$data['teacher_id']!==(int)$lesson->teacher_id)return response()->json(['message'=>'المدرس لا يطابق مدرس الحصة.'],422);$data['teacher_id']=$lesson->teacher_id;$lessonDate=$lesson->starts_at?->toDateString();if($lessonDate)$data['date']=$lessonDate;}
         $data['marked_at']=now(); return Attendance::updateOrCreate(['student_id'=>$data['student_id'],'date'=>$data['date'],'schedule_id'=>$data['schedule_id']??null,'lesson_id'=>$data['lesson_id']??null],$data);
     }
