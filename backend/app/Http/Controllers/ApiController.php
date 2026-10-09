@@ -47,6 +47,7 @@ class ApiController extends Controller
     public function dashboard(Request $request)
     {
         $admin = in_array($request->user()->role, ['admin', 'super_admin', 'owner'], true);
+        if (!$admin) return ['academy_name' => 'Online School Academy', 'role' => $request->user()->role];
         $data = [
             'academy_name' => 'Online School Academy',
             'students' => Student::count(),
@@ -280,7 +281,7 @@ class ApiController extends Controller
     public function storeAttendance(Request $request)
     {
         $data=$request->validate(['student_id'=>'required|exists:students,id','teacher_id'=>'nullable|exists:teachers,id','schedule_id'=>'nullable|exists:schedules,id','lesson_id'=>'nullable|exists:lessons,id','date'=>'required|date','status'=>['required',Rule::in(['present','absent','late','excused'])],'notes'=>'nullable']);
-        if(in_array($data['status'],['present','late'],true)){$student=Student::findOrFail($data['student_id']);if(!$student->allow_lessons_with_debt && $this->studentHasOutstandingSubscriptionBalance((int)$student->id))return response()->json(['success'=>false,'message'=>'لا يمكن تسجيل حضور لحصة جديدة مع وجود مديونية وفق سياسة الطالب.'],422);}
+        if(in_array($data['status'],['present','late'],true)){$student=Student::findOrFail($data['student_id']);$alreadyCompleted=!empty($data['lesson_id'])&&Lesson::whereKey($data['lesson_id'])->value('status')==='completed';if(!$alreadyCompleted&&!$student->allow_lessons_with_debt&&$this->studentHasOutstandingSubscriptionBalance((int)$student->id))return response()->json(['success'=>false,'message'=>'لا يمكن تسجيل حضور لحصة جديدة مع وجود مديونية وفق سياسة الطالب.'],422);}
         if(!empty($data['lesson_id'])){$lesson=Lesson::with('group.students')->findOrFail($data['lesson_id']);if($lesson->type==='private'&&(int)$lesson->student_id!==(int)$data['student_id'])return response()->json(['message'=>'الطالب لا يخص هذه الحصة الخاصة.'],422);if($lesson->type==='group'&&(!$lesson->group||!$lesson->group->students->contains('id',(int)$data['student_id'])))return response()->json(['message'=>'الطالب ليس ضمن طلاب مجموعة هذه الحصة.'],422);if(!empty($data['teacher_id'])&&(int)$data['teacher_id']!==(int)$lesson->teacher_id)return response()->json(['message'=>'المدرس لا يطابق مدرس الحصة.'],422);$data['teacher_id']=$lesson->teacher_id;$lessonDate=$lesson->starts_at?->toDateString();if($lessonDate)$data['date']=$lessonDate;}
         $data['marked_at']=now(); return Attendance::updateOrCreate(['student_id'=>$data['student_id'],'date'=>$data['date'],'schedule_id'=>$data['schedule_id']??null,'lesson_id'=>$data['lesson_id']??null],$data);
     }
