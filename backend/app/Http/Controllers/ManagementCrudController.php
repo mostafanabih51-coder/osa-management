@@ -41,6 +41,16 @@ class ManagementCrudController extends Controller
             'service_type'=>'nullable|in:private,group'
         ]);
 
+        $hasFinancialHistory = $subscription->payments()->exists() || $subscription->lessonUsages()->exists();
+        $lockedFields = ['student_id','group_id','subject','amount','starts_on','ends_on','billing_type','lesson_price','lesson_count','service_type'];
+        if ($hasFinancialHistory) {
+            foreach ($lockedFields as $field) {
+                if (array_key_exists($field, $d) && (string) $d[$field] !== (string) $subscription->{$field}) {
+                    return response()->json(['success'=>false,'message'=>'لا يمكن تغيير بيانات التسعير أو ربط الاشتراك بعد تسجيل دفعات أو حصص؛ أنشئ اشتراكًا جديدًا للتغييرات المستقبلية.'],422);
+                }
+            }
+        }
+
         $start=$d['starts_on'] ?? optional($subscription->starts_on)->format('Y-m-d');
         $end=$d['ends_on'] ?? optional($subscription->ends_on)->format('Y-m-d');
         if ($start && $end && strtotime($end) < strtotime($start)) {
@@ -81,6 +91,10 @@ class ManagementCrudController extends Controller
 
     public function destroySubscription(Subscription $subscription)
     {
+        if ($subscription->payments()->exists() || $subscription->lessonUsages()->exists()) {
+            $subscription->update(['status'=>'inactive']);
+            return response()->json(['success'=>true,'message'=>'تم إيقاف الاشتراك وأرشفة سجله؛ لا يمكن حذفه بعد وجود دفعات أو حصص مرتبطة.','data'=>$subscription->fresh()],200);
+        }
         $subscription->delete();
         return ['success'=>true];
     }
