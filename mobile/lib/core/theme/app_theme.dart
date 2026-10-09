@@ -28,8 +28,8 @@ class AppTheme {
       brightness: Brightness.dark,
       primary: AppColors.magenta,
       onPrimary: Colors.white,
-      secondary: AppColors.gold,
-      onSecondary: AppColors.navy,
+      secondary: AppColors.magenta,
+      onSecondary: Colors.white,
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
       error: const Color(0xFFFF7B86),
@@ -76,7 +76,7 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
         labelStyle: const TextStyle(color: AppColors.muted),
         hintStyle: const TextStyle(color: AppColors.muted),
-        prefixIconColor: AppColors.gold,
+        prefixIconColor: AppColors.muted,
         suffixIconColor: AppColors.muted,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -88,7 +88,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: AppColors.gold, width: 1.6),
+          borderSide: const BorderSide(color: AppColors.magenta, width: 1.6),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
@@ -97,8 +97,8 @@ class AppTheme {
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: AppColors.gold,
-          foregroundColor: AppColors.navy,
+          backgroundColor: AppColors.magenta,
+          foregroundColor: Colors.white,
           minimumSize: const Size(48, 50),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
@@ -125,7 +125,7 @@ class AppTheme {
         ),
       ),
       progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.gold,
+        color: AppColors.magenta,
       ),
       checkboxTheme: CheckboxThemeData(
         fillColor: WidgetStateProperty.resolveWith((states) =>
@@ -134,7 +134,7 @@ class AppTheme {
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) =>
-            states.contains(WidgetState.selected) ? AppColors.gold : AppColors.muted),
+            states.contains(WidgetState.selected) ? AppColors.magenta : AppColors.muted),
         trackColor: WidgetStateProperty.resolveWith((states) =>
             states.contains(WidgetState.selected) ? AppColors.magenta : AppColors.surfaceDeep),
       ),
