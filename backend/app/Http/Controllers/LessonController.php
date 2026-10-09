@@ -47,7 +47,13 @@ class LessonController extends Controller
         $lesson=DB::transaction(function()use($d){
             // A scheduled lesson is not earned yet. Create financial dues only when completion is confirmed.
             $l=Lesson::create($d);
-            if($l->status==='completed') $this->ensureCompletedLessonDues($l);
+            if($l->status==='completed') {
+                $month=$l->starts_at?->format('Y-m');
+                if($l->type==='private' && $l->student_id)$this->countPlanLesson((int)$l->student_id,(string)$l->subject,false,$month);
+                if($l->type==='group'){$ids=Group::find($l->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$l->subject,true,$month);}
+                $this->recordSubscriptionUsage($l);
+                $this->ensureCompletedLessonDues($l);
+            }
             return $l;
         });
         return response()->json(['success'=>true,'data'=>$lesson->fresh()->load(['teacher','supervisor','group.teacher','group.students','student','teacherDueRecord','supervisorDueRecord'])],201);
@@ -100,12 +106,12 @@ class LessonController extends Controller
             });
     }
 
-    private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false): void
+    private function countPlanLesson(int $studentId, string $subject, bool $resetOnMonthChange = false, ?string $planMonth = null): void
     {
         $plan=StudentSubject::where('student_id',$studentId)->where('subject',$subject)->first();
         if(!$plan)return;
-        $type=$plan->plan_type??'monthly';$month=now()->format('Y-m');
-        if($type==='monthly' && $plan->plan_month!==$month && ($resetOnMonthChange || (int)$plan->completed_lessons >= (int)$plan->monthly_lessons)){$plan->plan_month=$month;$plan->completed_lessons=0;}
+        $type=$plan->plan_type??'monthly';$month=$planMonth ?? now()->format('Y-m');
+        if($type==='monthly' && $plan->plan_month!==$month && ($resetOnMonthChange || empty($plan->plan_month) || (int)$plan->completed_lessons >= (int)$plan->monthly_lessons)){$plan->plan_month=$month;$plan->completed_lessons=0;}
         if((int)$plan->completed_lessons < (int)$plan->monthly_lessons){$plan->completed_lessons=(int)$plan->completed_lessons+1;$plan->save();}
     }
 
@@ -202,8 +208,8 @@ class LessonController extends Controller
                 $this->ensureCompletedLessonDues($lesson);
                 return;
             }
-            if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject);
-            if($lesson->type==='group'){$ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true);}
+            if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$lesson->starts_at?->format('Y-m'));
+            if($lesson->type==='group'){$ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$lesson->starts_at?->format('Y-m'));}
             $lesson->update(['status'=>'completed','completed_at'=>now()]);
             $this->recordSubscriptionUsage($lesson->fresh());
             $this->ensureCompletedLessonDues($lesson->fresh());
