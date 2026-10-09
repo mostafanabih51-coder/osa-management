@@ -73,7 +73,7 @@ class ApiController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'name'=>'required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','notes'=>'nullable',
+            'name'=>'required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','allow_lessons_with_debt'=>'nullable|boolean','notes'=>'nullable',
             'subjects'=>'nullable|array','subjects.*'=>'required|string|max:150',
         ]);
         $subjects = collect($data['subjects'] ?? [])->map(fn($v) => trim($v))->filter()->unique()->values()->all();
@@ -96,7 +96,7 @@ class ApiController extends Controller
     public function update(Request $request, Student $student)
     {
         $data = $request->validate([
-            'name'=>'sometimes|required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','notes'=>'nullable',
+            'name'=>'sometimes|required','phone'=>'nullable','parent_name'=>'nullable','parent_phone'=>'nullable','email'=>'nullable|email','grade'=>'nullable','curriculum'=>'nullable','status'=>'nullable','allow_lessons_with_debt'=>'nullable|boolean','notes'=>'nullable',
             'subjects'=>'nullable|array','subjects.*'=>'required|string|max:150',
         ]);
         $hasSubjects = array_key_exists('subjects', $data);
