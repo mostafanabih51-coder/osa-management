@@ -8,6 +8,7 @@ import '../supervisors/supervisors_screen.dart';
 import '../groups/groups_screen.dart';
 import '../lessons/lessons_screen.dart';
 import '../subscriptions/subscriptions_screen.dart';
+import '../subscriptions/subscription_reminders_screen.dart';
 import '../payments/payments_screen.dart';
 import '../expenses/expenses_screen.dart';
 import '../reports/reports_screen.dart';
@@ -42,6 +43,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         menuItem(Icons.menu_book,'الدروس والحصص',const LessonsScreen()),
         menuItem(Icons.fact_check,'المتابعة الأكاديمية',const AcademicTrackingScreen()),
         menuItem(Icons.event_available,'الاشتراكات',const SubscriptionsScreen()),
+        menuItem(Icons.notifications_active,'تنبيهات الاشتراكات',const SubscriptionRemindersScreen()),
         menuItem(Icons.payments,'المدفوعات',const PaymentsScreen()),
         const Divider(),
         menuItem(Icons.calendar_month,'الجداول',const SchedulesScreen()),
