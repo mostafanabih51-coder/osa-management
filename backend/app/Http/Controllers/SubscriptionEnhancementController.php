@@ -32,7 +32,7 @@ class SubscriptionEnhancementController extends Controller
             } else {
                 $data['billing_type'] = 'per_lesson';
                 $data['amount'] = $data['lesson_price'];
-                $data['lesson_count'] = null;
+                // For per-lesson billing, lesson_count is the agreed collection/reminder threshold.
             }
         } else {
             if (empty($data['group_id'])) return response()->json(['message' => 'اختر المجموعة المرتبط بها الطالب قبل حفظ اشتراك الجروب.'], 422);
