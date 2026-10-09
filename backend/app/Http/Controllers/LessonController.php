@@ -80,6 +80,7 @@ class LessonController extends Controller
 
     public function destroy(Lesson $lesson)
     {
+        if(SubscriptionLessonUsage::where('lesson_id',$lesson->id)->exists())return response()->json(['success'=>false,'message'=>'لا يمكن حذف حصة تم احتسابها ضمن رصيد اشتراك؛ ألغِ الحصة أو صحح سجل الاشتراك أولًا.'],422);
         $paid=TeacherLessonDue::where('lesson_id',$lesson->id)->where('paid_amount','>',0)->exists()||SupervisorDue::where('lesson_id',$lesson->id)->where('paid_amount','>',0)->exists();
         if($paid)return response()->json(['success'=>false,'message'=>'لا يمكن حذف حصة تم صرف مستحقاتها.'],422);
         DB::transaction(function()use($lesson){TeacherLessonDue::where('lesson_id',$lesson->id)->delete();SupervisorDue::where('lesson_id',$lesson->id)->delete();$lesson->delete();});
