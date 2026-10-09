@@ -211,12 +211,16 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                         decoration: const InputDecoration(labelText: 'سعر الحصة الخاصة *'),
                         validator: (v) => double.tryParse(v ?? '') == null ? 'أدخل سعر الحصة' : null,
                       ),
-                    if (serviceType == 'private' && billingType == 'monthly')
+                    if (serviceType == 'private')
                       TextFormField(
                         controller: lessonCount,
                         keyboardType: TextInputType.number,
-                        decoration: const InputDecoration(labelText: 'عدد الحصص شهريًا'),
-                        validator: (v) => int.tryParse(v ?? '') == null ? 'أدخل عددًا صحيحًا' : null,
+                        decoration: InputDecoration(
+                          labelText: billingType == 'monthly' ? 'عدد حصص الباقة الشهرية' : 'عدد الحصص قبل التحصيل',
+                        ),
+                        validator: (v) => int.tryParse(v ?? '') == null || int.parse(v!) < 1
+                            ? 'أدخل عددًا صحيحًا أكبر من صفر'
+                            : null,
                       ),
                     if ((serviceType == 'private' && billingType == 'monthly') || serviceType == 'group')
                       TextFormField(
