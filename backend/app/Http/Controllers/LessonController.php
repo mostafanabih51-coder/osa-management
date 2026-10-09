@@ -101,7 +101,7 @@ class LessonController extends Controller
             ->sum(function ($subscription) {
                 $paid = (float) $subscription->payments->sum('amount');
                 $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
-                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * $subscription->lessonUsages->count()
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * ((int) ($subscription->lesson_count ?? 0) > 0 ? intdiv($subscription->lessonUsages->count(), (int) $subscription->lesson_count) * (int) $subscription->lesson_count : $subscription->lessonUsages->count())
                     : (float) $subscription->amount;
                 return max(0, $gross - $paid);
             });
