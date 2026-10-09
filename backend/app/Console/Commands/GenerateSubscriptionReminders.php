@@ -24,8 +24,10 @@ class GenerateSubscriptionReminders extends Command
                 $subject = $subscription->subject;
                 $paid = (float) $subscription->payments->sum('amount');
                 $used = $subscription->lessonUsages->count();
+                $thresholdForBilling = (int) ($subscription->lesson_count ?? 0);
+                $billableLessons = $thresholdForBilling > 0 ? intdiv($used, $thresholdForBilling) * $thresholdForBilling : $used;
                 $gross = ($subscription->billing_type ?? 'monthly') === 'per_lesson'
-                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * $used
+                    ? (float) ($subscription->lesson_price ?? $subscription->amount) * $billableLessons
                     : (float) $subscription->amount;
                 $outstanding = max(0, $gross - $paid);
 
