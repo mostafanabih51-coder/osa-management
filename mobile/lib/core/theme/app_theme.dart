@@ -66,9 +66,11 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        // A slightly translucent brand surface makes the glass treatment visible
+        // while preserving strong contrast and the exact OSA fuchsia base.
+        color: AppColors.magenta.withValues(alpha: 0.92),
         elevation: 0,
-        shadowColor: AppColors.magenta.withValues(alpha: 0.16),
+        shadowColor: AppColors.magenta.withValues(alpha: 0.22),
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -301,7 +303,7 @@ class GlassSurface extends StatelessWidget {
     this.radius = 24,
     this.blur = 16,
     this.tint = AppColors.magenta,
-    this.borderColor = const Color(0x35F1F3F8),
+    this.borderColor = const Color(0x55F1F3F8),
   });
 
   @override
@@ -313,7 +315,8 @@ class GlassSurface extends StatelessWidget {
         filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           decoration: BoxDecoration(
-            color: tint,
+            // Keep the tint mostly solid, but allow the backdrop blur to read as glass.
+            color: tint.withValues(alpha: 0.92),
             borderRadius: shape,
             border: Border.all(color: borderColor, width: 1),
             gradient: const LinearGradient(
@@ -321,9 +324,9 @@ class GlassSurface extends StatelessWidget {
               end: Alignment.bottomRight,
               // Preserve the exact dark-fuchsia base; this is only a light gloss.
               colors: [
-                Color(0x14FFFFFF),
-                Color(0x08FFFFFF),
-                Color(0x00FFFFFF),
+                Color(0x24FFFFFF),
+                Color(0x12FFFFFF),
+                Color(0x04FFFFFF),
                 Color(0x00FFFFFF),
                 Color(0x00FFFFFF),
               ],
