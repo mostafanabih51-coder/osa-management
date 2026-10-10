@@ -36,7 +36,7 @@ class LessonController extends Controller
 
     public function store(Request $r)
     {
-        $d=$r->validate(['type'=>['required',Rule::in(['group','private'])],'teacher_id'=>'required|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'required|string|max:255','starts_at'=>'required|date','ends_at'=>'required|date|after:starts_at','zoom_url'=>'nullable|string','status'=>['nullable',Rule::in(['scheduled','completed','cancelled'])],'teacher_rate'=>'nullable|numeric|min:0','supervisor_rate'=>'nullable|numeric|min:0','notes'=>'nullable|string']);
+        $d=$r->validate(['type'=>['required',Rule::in(['group','private'])],'teacher_id'=>'required|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'required|string|max:255','starts_at'=>'required|date','ends_at'=>'required|date|after:starts_at','zoom_url'=>'nullable|string','status'=>['nullable',Rule::in(['scheduled','cancelled'])],'teacher_rate'=>'nullable|numeric|min:0','supervisor_rate'=>'nullable|numeric|min:0','notes'=>'nullable|string']);
         $this->relations($d);
         if($d['type']==='private' && !Student::whereKey($d['student_id'])->value('allow_lessons_with_debt') && $this->studentOutstandingBalance((int)$d['student_id']) > 0.009) return response()->json(['success'=>false,'message'=>'تم إيقاف الحصص الجديدة لهذا الطالب بسبب وجود مديونية؛ سجّل السداد أو غيّر سياسة الطالب أولًا.'],422);
         if($d['type']==='group') $d['student_id']=null; else $d['group_id']=null;
@@ -64,11 +64,12 @@ class LessonController extends Controller
 
     public function update(Request $r,Lesson $lesson)
     {
-        $d=$r->validate(['type'=>['sometimes',Rule::in(['group','private'])],'teacher_id'=>'sometimes|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'sometimes|string|max:255','starts_at'=>'sometimes|date','ends_at'=>'sometimes|date','zoom_url'=>'nullable|string','status'=>['sometimes',Rule::in(['scheduled','completed','cancelled'])],'teacher_rate'=>'sometimes|numeric|min:0','supervisor_rate'=>'sometimes|numeric|min:0','notes'=>'nullable|string']);
+        $d=$r->validate(['type'=>['sometimes',Rule::in(['group','private'])],'teacher_id'=>'sometimes|integer|exists:teachers,id','supervisor_id'=>'nullable|integer|exists:supervisors,id','group_id'=>'nullable|integer|exists:groups,id','student_id'=>'nullable|integer|exists:students,id','subject'=>'sometimes|string|max:255','starts_at'=>'sometimes|date','ends_at'=>'sometimes|date','zoom_url'=>'nullable|string','status'=>['sometimes',Rule::in(['scheduled','cancelled'])],'teacher_rate'=>'sometimes|numeric|min:0','supervisor_rate'=>'sometimes|numeric|min:0','notes'=>'nullable|string']);
         $td=TeacherLessonDue::where('lesson_id',$lesson->id)->first(); $sd=SupervisorDue::where('lesson_id',$lesson->id)->first();
         $financiallyPaid=(($td&&(float)$td->paid_amount>0)||($sd&&(float)$sd->paid_amount>0));
         $financialFields=['type','teacher_id','supervisor_id','group_id','student_id','subject','teacher_rate','supervisor_rate'];
         if($financiallyPaid) foreach($financialFields as $f) if(array_key_exists($f,$d) && (string)$d[$f] !== (string)$lesson->{$f}) return response()->json(['success'=>false,'message'=>'لا يمكن تغيير بيانات الحصة المالية بعد صرف المستحق.'],422);
+        if(isset($d['status']) && $d['status']==='completed' && $lesson->status!=='completed') return response()->json(['success'=>false,'message'=>'تأكيد إتمام الحصة يجب أن يتم من زر «تأكيد إتمام الحصة» المخصص؛ لن يتم احتساب الحصة من شاشة التعديل.'],422);
         if($lesson->status==='completed' && isset($d['status']) && $d['status']!=='completed') return response()->json(['success'=>false,'message'=>'لا يمكن إعادة فتح حصة مكتملة.'],422);
         if($lesson->status==='completed') {
             $completedAccountingFields=['type','teacher_id','supervisor_id','group_id','student_id','subject','teacher_rate','supervisor_rate'];
