@@ -328,7 +328,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => editForm(),
-        backgroundColor: AppColors.red,
+        backgroundColor: AppColors.magenta,
         icon: const Icon(Icons.person_add),
         label: const Text('إضافة طالب'),
       ),
