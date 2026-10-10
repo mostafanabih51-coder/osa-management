@@ -68,7 +68,7 @@ class AppTheme {
       cardTheme: CardThemeData(
         // A slightly translucent brand surface makes the glass treatment visible
         // while preserving strong contrast and the exact OSA fuchsia base.
-        color: AppColors.magenta.withValues(alpha: 0.92),
+        color: AppColors.magenta,
         elevation: 0,
         shadowColor: AppColors.magenta.withValues(alpha: 0.22),
         surfaceTintColor: Colors.transparent,
@@ -316,7 +316,7 @@ class GlassSurface extends StatelessWidget {
         child: Container(
           decoration: BoxDecoration(
             // Keep the tint mostly solid, but allow the backdrop blur to read as glass.
-            color: tint.withValues(alpha: 0.92),
+            color: tint,
             borderRadius: shape,
             border: Border.all(color: borderColor, width: 1),
             gradient: const LinearGradient(
