@@ -208,7 +208,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                       const SizedBox(width: 9),
                       _metric('الحصص', '${lessons.length}', Icons.event_available_rounded, AppColors.magenta),
                       const SizedBox(width: 9),
-                      _metric('المستحقات', '${dues.length}', Icons.account_balance_wallet_rounded, const Color(0xFF78D6B0)),
+                      _metric('المستحقات', '${dues.length}', Icons.account_balance_wallet_rounded, AppColors.yellow),
                     ],
                   ),
                   _section(
