@@ -169,7 +169,7 @@ class _GroupsScreenState extends State<GroupsScreen> {
           itemBuilder: (context, index) {
             final g = Map<String, dynamic>.from(groups[index]);
             return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(
-              leading: const CircleAvatar(child: Icon(Icons.groups)),
+              leading: const CircleAvatar(backgroundColor: AppColors.blueGray, foregroundColor: AppColors.yellow, child: Icon(Icons.groups)),
               title: Text('${g['name'] ?? ''}'),
               subtitle: Text('المدرس: ${g['teacher']?['name'] ?? ''}\nالمشرف: ${g['supervisor']?['name'] ?? 'بدون'}\nالمادة: ${g['subject'] ?? ''} • الطلاب: ${g['students_count'] ?? 0}'),
               isThreeLine: true,
