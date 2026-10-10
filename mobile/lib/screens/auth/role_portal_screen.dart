@@ -153,7 +153,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                               ),
                               child: Icon(
                                 isTeacher ? Icons.school_rounded : Icons.supervisor_account_rounded,
-                                color: Colors.white,
+                                color: AppColors.yellow,
                                 size: 29,
                               ),
                             ),
