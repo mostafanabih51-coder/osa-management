@@ -50,7 +50,7 @@ class AppTheme {
             displayColor: AppColors.text,
           ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.navy.withValues(alpha: 0.78),
+        backgroundColor: Color(0xC7384660),
         foregroundColor: AppColors.text,
         centerTitle: false,
         elevation: 0,
