@@ -1,5 +1,3 @@
-import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 
 /// Official Online School Academy palette.
@@ -66,11 +64,9 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        // A slightly translucent brand surface makes the glass treatment visible
-        // while preserving strong contrast and the exact OSA fuchsia base.
         color: AppColors.magenta,
         elevation: 0,
-        shadowColor: AppColors.magenta.withValues(alpha: 0.22),
+        shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -287,11 +283,12 @@ class AppTheme {
   }
 }
 
-/// Premium glassmorphism surface using the academy palette with glossy edge highlights.
+/// Solid, fully opaque OSA brand surface. Keep cards free of glass blur and gloss.
 class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
+  // Retained for source compatibility; solid cards intentionally do not blur.
   final double blur;
   final Color tint;
   final Color borderColor;
@@ -301,78 +298,22 @@ class GlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
-    this.blur = 16,
+    this.blur = 0,
     this.tint = AppColors.magenta,
-    this.borderColor = const Color(0x55F1F3F8),
+    this.borderColor = AppColors.magenta,
   });
 
   @override
   Widget build(BuildContext context) {
     final shape = BorderRadius.circular(radius);
-    return ClipRRect(
-      borderRadius: shape,
-      child: BackdropFilter(
-        filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
-        child: Container(
-          decoration: BoxDecoration(
-            // Keep the tint mostly solid, but allow the backdrop blur to read as glass.
-            color: tint,
-            borderRadius: shape,
-            border: Border.all(color: borderColor, width: 1),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              // Preserve the exact dark-fuchsia base; this is only a light gloss.
-              colors: [
-                Color(0x24FFFFFF),
-                Color(0x12FFFFFF),
-                Color(0x04FFFFFF),
-                Color(0x00FFFFFF),
-                Color(0x00FFFFFF),
-              ],
-              stops: [0.0, 0.18, 0.48, 0.76, 1.0],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.navy.withValues(alpha: 0.22),
-                blurRadius: 24,
-                offset: const Offset(0, 10),
-              ),
-              BoxShadow(
-                color: AppColors.magenta.withValues(alpha: 0.09),
-                blurRadius: 18,
-                spreadRadius: -4,
-              ),
-            ],
-          ),
-          child: Stack(
-            children: [
-              Positioned(
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 1.5,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        Colors.transparent,
-                        AppColors.text.withValues(alpha: 0.72),
-                        AppColors.text.withValues(alpha: 0.20),
-                        Colors.transparent,
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: padding,
-                child: child,
-              ),
-            ],
-          ),
-        ),
+    return Container(
+      padding: padding,
+      decoration: BoxDecoration(
+        color: tint,
+        borderRadius: shape,
+        border: Border.all(color: borderColor, width: 1),
       ),
+      child: child,
     );
   }
 }
