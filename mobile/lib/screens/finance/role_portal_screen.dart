@@ -125,7 +125,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
                     children: [
-                      Card(child: ListTile(title: Text('${profile['name'] ?? 'الحساب'}'), subtitle: Text('${portal['role'] == 'teacher' ? 'مدرس' : 'مشرف'}'))),
+                      GlassSurface(padding: EdgeInsets.zero, radius: 18, blur: 10, child: ListTile(title: Text('${profile['name'] ?? 'الحساب'}'), subtitle: Text('${portal['role'] == 'teacher' ? 'مدرس' : 'مشرف'}'))),
                       Card(child: Padding(padding: const EdgeInsets.all(16), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         const Text('ملخص المستحقات', style: TextStyle(fontWeight: FontWeight.bold)),
                         const SizedBox(height: 8),
@@ -140,7 +140,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                         final due = raw is Map ? raw : {};
                         final lesson = due['lesson'] is Map ? due['lesson'] as Map : {};
                         final rest = (number(due['amount']) - number(due['paid_amount'])).clamp(0, double.infinity).toDouble();
-                        return Card(child: ListTile(
+                        return GlassSurface(padding: EdgeInsets.zero, radius: 18, blur: 10, child: ListTile(
                           title: Text('${lesson['subject'] ?? 'حصة'} • ${number(due['amount']).toStringAsFixed(2)}'),
                           subtitle: Text('${lesson['starts_at'] ?? ''}\nالمصروف: ${number(due['paid_amount']).toStringAsFixed(2)} • المتبقي: ${rest.toStringAsFixed(2)}'),
                           isThreeLine: true,
