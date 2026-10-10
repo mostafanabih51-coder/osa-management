@@ -29,9 +29,9 @@ class AppTheme {
     final scheme = ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.magenta,
-      onPrimary: AppColors.yellow,
+      onPrimary: Colors.white,
       secondary: AppColors.magenta,
-      onSecondary: AppColors.yellow,
+      onSecondary: Colors.white,
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
       error: AppColors.magenta,
@@ -44,7 +44,7 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.blueGray,
+      scaffoldBackgroundColor: Colors.transparent,
       iconTheme: const IconThemeData(color: AppColors.yellow),
       canvasColor: Colors.transparent,
       dividerColor: AppColors.border,
@@ -296,7 +296,7 @@ class GlassSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
     this.blur = 16,
-    this.tint = const Color(0xE6B43A6C),
+    this.tint = AppColors.magenta,
     this.borderColor = const Color(0x35F1F3F8),
   });
 
