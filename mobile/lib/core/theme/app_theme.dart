@@ -277,8 +277,7 @@ class AppTheme {
   }
 }
 
-/// A restrained translucent overlay for screens that explicitly need a glass accent.
-/// Prefer solid brand colors for dashboard action cards.
+/// Premium glassmorphism surface using the academy palette with glossy edge highlights.
 class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
@@ -292,9 +291,9 @@ class GlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
-    this.blur = 10,
-    this.tint = const Color(0x20FFFFFF),
-    this.borderColor = const Color(0x66FFFFFF),
+    this.blur = 16,
+    this.tint = const Color(0x26384360),
+    this.borderColor = const Color(0x66F1F3F8),
   });
 
   @override
@@ -305,20 +304,66 @@ class GlassSurface extends StatelessWidget {
       child: BackdropFilter(
         filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
-          padding: padding,
           decoration: BoxDecoration(
-            color: tint,
             borderRadius: shape,
             border: Border.all(color: borderColor, width: 1),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Color(0x38F1F3F8),
+                Color(0x26384660),
+                Color(0x20B43A6C),
+                Color(0x18303D55),
+              ],
+              stops: [0.0, 0.32, 0.72, 1.0],
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.22),
+                blurRadius: 24,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: AppColors.magenta.withValues(alpha: 0.08),
+                blurRadius: 20,
+                spreadRadius: -4,
+              ),
+            ],
           ),
-          child: child,
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 1.5,
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Colors.transparent,
+                        AppColors.text.withValues(alpha: 0.72),
+                        AppColors.text.withValues(alpha: 0.20),
+                        Colors.transparent,
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: padding,
+                child: child,
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Small, restrained press animation for high-value interactive surfaces.
+/// Smooth, restrained press animation for interactive surfaces.
 class AnimatedPressable extends StatefulWidget {
   final Widget child;
   final VoidCallback onTap;
