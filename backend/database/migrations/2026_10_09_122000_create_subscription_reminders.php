@@ -18,7 +18,7 @@ return new class extends Migration {
                 $table->date('due_on')->nullable();
                 $table->timestamp('read_at')->nullable();
                 $table->timestamps();
-                $table->unique(['subscription_id', 'reminder_type', 'cycle_key']);
+                $table->unique(['subscription_id', 'reminder_type', 'cycle_key'], 'sub_reminders_sub_type_cycle_unique');
                 $table->index(['read_at', 'created_at']);
             });
         }
