@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
 class UsersScreen extends StatefulWidget {
@@ -108,7 +109,7 @@ class _UsersScreenState extends State<UsersScreen> {
       floatingActionButton: FloatingActionButton.extended(onPressed: addUser, icon: const Icon(Icons.person_add), label: const Text('إضافة مستخدم')),
       body: loading ? const Center(child: CircularProgressIndicator()) : RefreshIndicator(onRefresh: loadUsers, child: users.isEmpty ? ListView(children: const [SizedBox(height: 180), Center(child: Text('لا يوجد مستخدمون'))]) : ListView.builder(padding: const EdgeInsets.all(12), itemCount: users.length, itemBuilder: (context, index) {
         final user = users[index]; final role = '${user['role'] ?? ''}'; final locked = ['admin', 'super_admin', 'owner'].contains(role); final count = user['permissions'] is List ? (user['permissions'] as List).length : 0;
-        return Card(child: ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: Text('${user['name'] ?? ''}'), subtitle: Text('${user['email'] ?? ''}\nالدور: ${roles[role] ?? role}${locked ? ' — صلاحيات إدارية كاملة' : ' — $count صلاحية'}'), isThreeLine: true, trailing: PopupMenuButton<String>(onSelected: (v) { if (v == 'permissions') editPermissions(user); if (v == 'delete') deleteUser(user); }, itemBuilder: (_) => [const PopupMenuItem(value: 'permissions', child: Text('الصلاحيات')), if (!locked) const PopupMenuItem(value: 'delete', child: Text('حذف'))])));
+        return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(leading: const CircleAvatar(child: Icon(Icons.person)), title: Text('${user['name'] ?? ''}'), subtitle: Text('${user['email'] ?? ''}\nالدور: ${roles[role] ?? role}${locked ? ' — صلاحيات إدارية كاملة' : ' — $count صلاحية'}'), isThreeLine: true, trailing: PopupMenuButton<String>(onSelected: (v) { if (v == 'permissions') editPermissions(user); if (v == 'delete') deleteUser(user); }, itemBuilder: (_) => [const PopupMenuItem(value: 'permissions', child: Text('الصلاحيات')), if (!locked) const PopupMenuItem(value: 'delete', child: Text('حذف'))])));
       })),
     );
   }
