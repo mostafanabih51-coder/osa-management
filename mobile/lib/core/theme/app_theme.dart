@@ -69,7 +69,7 @@ class AppTheme {
         color: AppColors.surface,
         elevation: 0,
         shadowColor: AppColors.magenta.withValues(alpha: 0.16),
-        surfaceTintColor: Color(0x14F1F3F8),
+        surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
