@@ -7,6 +7,7 @@ class AppColors {
   static const navy = Color(0xFF384660);
   static const magenta = Color(0xFFB43A6C);
   static const gold = Color(0xFFFFC822);
+  static const yellow = gold;
   static const background = navy;
   static const surface = Color(0xFF45536D);
   static const surfaceDeep = Color(0xFF303D55);
@@ -32,7 +33,7 @@ class AppTheme {
       onSecondary: Colors.white,
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
-      error: const AppColors.magenta,
+      error: AppColors.magenta,
       onError: AppColors.navy,
       surface: AppColors.surface,
       onSurface: AppColors.text,
