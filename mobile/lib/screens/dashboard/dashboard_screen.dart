@@ -312,7 +312,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const Text(
                         'إدارة الطلاب والمدرسين والحصص والمالية من مكان واحد.',
                         style: TextStyle(
-                          color: Color(0xFFFBEAF1),
+                          color: Colors.white,
                           fontSize: 13,
                           height: 1.5,
                         ),
