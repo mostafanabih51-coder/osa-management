@@ -305,6 +305,7 @@ class GlassSurface extends StatelessWidget {
         filter: ui.ImageFilter.blur(sigmaX: blur, sigmaY: blur),
         child: Container(
           decoration: BoxDecoration(
+            color: tint,
             borderRadius: shape,
             border: Border.all(color: borderColor, width: 1),
             gradient: const LinearGradient(
