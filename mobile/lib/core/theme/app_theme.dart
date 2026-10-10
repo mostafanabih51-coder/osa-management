@@ -62,19 +62,19 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface.withValues(alpha: 0.48),
+        color: AppColors.surface.withValues(alpha: 0.30),
         elevation: 0,
-        shadowColor: AppColors.magenta.withValues(alpha: 0.22),
+        shadowColor: AppColors.magenta.withValues(alpha: 0.34),
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AppColors.text.withValues(alpha: 0.20), width: 1),
+          side: BorderSide(color: AppColors.text.withValues(alpha: 0.30), width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceDeep.withValues(alpha: 0.68),
+        fillColor: AppColors.surfaceDeep.withValues(alpha: 0.48),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
         labelStyle: const TextStyle(color: AppColors.muted),
         hintStyle: const TextStyle(color: AppColors.muted),
@@ -312,12 +312,13 @@ class GlassSurface extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0x38F1F3F8),
-                Color(0x26384660),
-                Color(0x20B43A6C),
+                Color(0x50F1F3F8),
+                Color(0x30384660),
+                Color(0x40B43A6C),
+                Color(0x25FFC822),
                 Color(0x18303D55),
               ],
-              stops: [0.0, 0.32, 0.72, 1.0],
+              stops: [0.0, 0.25, 0.58, 0.78, 1.0],
             ),
             boxShadow: [
               BoxShadow(
@@ -326,7 +327,7 @@ class GlassSurface extends StatelessWidget {
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
-                color: AppColors.magenta.withValues(alpha: 0.08),
+                color: AppColors.magenta.withValues(alpha: 0.16),
                 blurRadius: 20,
                 spreadRadius: -4,
               ),
