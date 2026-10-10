@@ -86,7 +86,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Positioned(
             bottom: -90,
             left: -75,
-            child: _GlowOrb(color: AppColors.gold.withValues(alpha: 0.10), size: 220),
+            child: _GlowOrb(color: AppColors.yellow.withValues(alpha: 0.10), size: 220),
           ),
           SafeArea(
             child: Center(
@@ -137,7 +137,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: const Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.stars_rounded, color: AppColors.gold, size: 17),
+                            Icon(Icons.stars_rounded, color: AppColors.yellow, size: 17),
                             SizedBox(width: 7),
                             Text(
                               'نظام إدارة الأكاديمية',
