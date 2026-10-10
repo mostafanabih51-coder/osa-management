@@ -14,13 +14,41 @@ class ModulePlaceholderScreen extends StatelessWidget {
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 72, color: AppColors.red),
-            const SizedBox(height: 16),
-            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            const Text('القسم جاهز للتنقل وسيتم استكمال وظائفه من داخل النظام.'),
-          ]),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 440),
+            child: GlassSurface(
+              padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
+              radius: 28,
+              blur: 16,
+              tint: const Color(0x24FFFFFF),
+              borderColor: AppColors.border,
+              child: Column(mainAxisSize: MainAxisSize.min, children: [
+                Container(
+                  width: 92,
+                  height: 92,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: const LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [AppColors.magenta, AppColors.surfaceDeep],
+                    ),
+                    border: Border.all(color: AppColors.gold.withValues(alpha: 0.7)),
+                    boxShadow: [BoxShadow(color: AppColors.magenta.withValues(alpha: 0.22), blurRadius: 24, offset: const Offset(0, 8))],
+                  ),
+                  child: Icon(icon, size: 42, color: AppColors.gold),
+                ),
+                const SizedBox(height: 20),
+                Text(title, textAlign: TextAlign.center, style: const TextStyle(fontSize: 23, fontWeight: FontWeight.w800, color: AppColors.text)),
+                const SizedBox(height: 10),
+                const Text(
+                  'القسم جاهز للتنقل وسيتم استكمال وظائفه من داخل النظام.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.muted, height: 1.5),
+                ),
+              ]),
+            ),
+          ),
         ),
       ),
     );
