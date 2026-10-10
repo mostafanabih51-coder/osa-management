@@ -28,6 +28,7 @@ void main() {
   testWidgets('app opens on login when there is no session', (tester) async {
     await tester.pumpWidget(const OSAApp(initialLoggedIn: false));
     expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(GlassSurface), findsOneWidget);
     expect(find.text('دخول'), findsOneWidget);
   });
 }
