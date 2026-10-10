@@ -72,7 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   colors: [
                     AppColors.surfaceDeep,
                     AppColors.navy,
-                    Color(0xFF252F43),
+                    AppColors.surfaceDeep,
                   ],
                 ),
               ),
@@ -213,20 +213,20 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Container(
                                   padding: const EdgeInsets.all(12),
                                   decoration: BoxDecoration(
-                                    color: const Color(0x22FF7B86),
+                                    color: AppColors.magenta.withOpacity(0.13),
                                     borderRadius: BorderRadius.circular(13),
-                                    border: Border.all(color: const Color(0x66FF7B86)),
+                                    border: Border.all(color: AppColors.magenta.withOpacity(0.4)),
                                   ),
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.error_outline_rounded, color: Color(0xFFFF9BA3), size: 20),
+                                      const Icon(Icons.error_outline_rounded, color: AppColors.magenta, size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
                                           error!,
                                           textAlign: TextAlign.right,
-                                          style: const TextStyle(color: Color(0xFFFFC5C9), height: 1.4),
+                                          style: const TextStyle(color: Colors.white, height: 1.4),
                                         ),
                                       ),
                                     ],
