@@ -319,12 +319,13 @@ class GlassSurface extends StatelessWidget {
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
+              // Preserve the exact dark-fuchsia base; this is only a light gloss.
               colors: [
-                Color(0x28FFFFFF),
-                Color(0x10FFFFFF),
-                Color(0x06384660),
-                Color(0x0DB43A6C),
-                Color(0x06384660),
+                Color(0x14FFFFFF),
+                Color(0x08FFFFFF),
+                Color(0x00FFFFFF),
+                Color(0x00FFFFFF),
+                Color(0x00FFFFFF),
               ],
               stops: [0.0, 0.18, 0.48, 0.76, 1.0],
             ),
