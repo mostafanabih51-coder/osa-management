@@ -29,9 +29,9 @@ class AppTheme {
     final scheme = ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.magenta,
-      onPrimary: Colors.white,
+      onPrimary: AppColors.yellow,
       secondary: AppColors.magenta,
-      onSecondary: Colors.white,
+      onSecondary: AppColors.yellow,
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
       error: AppColors.magenta,
@@ -44,7 +44,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: Colors.transparent,
+      scaffoldBackgroundColor: AppColors.blueGray,
+      iconTheme: const IconThemeData(color: AppColors.yellow),
       canvasColor: Colors.transparent,
       dividerColor: AppColors.border,
       textTheme: ThemeData.dark().textTheme.apply(
@@ -53,7 +54,8 @@ class AppTheme {
           ),
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.blueGray,
-        foregroundColor: AppColors.text,
+        foregroundColor: AppColors.yellow,
+        iconTheme: const IconThemeData(color: AppColors.yellow),
         centerTitle: false,
         elevation: 0,
         surfaceTintColor: Colors.transparent,
@@ -120,14 +122,14 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.yellow,
+          foregroundColor: AppColors.magenta,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.yellow,
-        foregroundColor: AppColors.blueGray,
+        backgroundColor: AppColors.magenta,
+        foregroundColor: AppColors.yellow,
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
@@ -168,8 +170,8 @@ class AppTheme {
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.text,
-          side: const BorderSide(color: AppColors.border),
+          foregroundColor: AppColors.magenta,
+          side: const BorderSide(color: AppColors.magenta),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
@@ -294,7 +296,7 @@ class GlassSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
     this.blur = 16,
-    this.tint = const Color(0xD9B43A6C),
+    this.tint = const Color(0xE6B43A6C),
     this.borderColor = const Color(0x35F1F3F8),
   });
 
