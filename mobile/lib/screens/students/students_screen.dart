@@ -367,7 +367,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                           itemCount: students.length,
                           itemBuilder: (_, index) {
                             final student = Map<String, dynamic>.from(students[index]);
-                            return Card(
+                            return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                               child: ListTile(
                                 onTap: () => details(id(student)),
                                 leading: const CircleAvatar(child: Icon(Icons.person)),
