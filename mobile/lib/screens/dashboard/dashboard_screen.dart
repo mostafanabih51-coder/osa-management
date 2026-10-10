@@ -242,19 +242,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
             // The highlight belongs to the screen surface; cards remain solid.
-            Container(
+            GlassSurface(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: AppColors.magenta,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.16),
-                    blurRadius: 22,
-                    offset: const Offset(0, 9),
-                  ),
-                ],
-              ),
+              radius: 24,
+              blur: 22,
+              tint: AppColors.magenta.withValues(alpha: 0.24),
+              borderColor: AppColors.text.withValues(alpha: 0.28),
               child: Stack(
                 children: [
                   Positioned(
@@ -434,13 +427,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 12),
-            Container(
+            GlassSurface(
               padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.surfaceDeep,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppColors.border),
-              ),
+              radius: 20,
+              blur: 18,
+              tint: AppColors.surfaceDeep.withValues(alpha: 0.30),
+              borderColor: AppColors.text.withValues(alpha: 0.18),
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -572,13 +564,12 @@ class _QuickAction extends StatelessWidget {
     return AnimatedPressable(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
-      child: Container(
+      child: GlassSurface(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-        ),
+        radius: 14,
+        blur: 12,
+        tint: AppColors.surface.withValues(alpha: 0.32),
+        borderColor: AppColors.text.withValues(alpha: 0.18),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
