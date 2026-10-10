@@ -4,12 +4,14 @@ import 'package:flutter/material.dart';
 
 /// Official Online School Academy palette.
 class AppColors {
-  static const navy = Color(0xFF384660);
+  static const blueGray = Color(0xFF384660);
+  @Deprecated('Use blueGray; this alias is retained for compatibility.')
+  static const navy = blueGray;
   static const magenta = Color(0xFFB43A6C);
   static const yellow = Color(0xFFFFC822);
-  static const background = navy;
-  static const surface = Color(0xFF303D55);
-  static const surfaceDeep = Color(0xFF263248);
+  static const background = blueGray;
+  static const surface = blueGray;
+  static const surfaceDeep = blueGray;
   static const text = Color(0xFFF1F3F8);
   static const muted = Color(0xFFD6DCE7);
   static const border = Color(0x667D8AA0);
@@ -33,7 +35,7 @@ class AppTheme {
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
       error: AppColors.magenta,
-      onError: AppColors.navy,
+      onError: AppColors.blueGray,
       surface: AppColors.surface,
       onSurface: AppColors.text,
     );
@@ -50,7 +52,7 @@ class AppTheme {
             displayColor: AppColors.text,
           ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.navy,
+        backgroundColor: AppColors.blueGray,
         foregroundColor: AppColors.text,
         centerTitle: false,
         elevation: 0,
@@ -125,7 +127,7 @@ class AppTheme {
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: AppColors.yellow,
-        foregroundColor: AppColors.navy,
+        foregroundColor: AppColors.blueGray,
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       ),
