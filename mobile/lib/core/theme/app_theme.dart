@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 /// Official Online School Academy palette.
 class AppColors {
   static const navy = Color(0xFF384660);
-  static const magenta = Color(0xFFA0005A);
+  static const magenta = Color(0xFFB43A6C);
   static const gold = Color(0xFFFFC822);
   static const background = navy;
   static const surface = Color(0xFF45536D);
@@ -266,7 +266,7 @@ class AppTheme {
       ),
       textSelectionTheme: const TextSelectionThemeData(
         cursorColor: AppColors.gold,
-        selectionColor: Color(0x66A0005A),
+        selectionColor: Color(0x66B43A6C),
         selectionHandleColor: AppColors.magenta,
       ),
       popupMenuTheme: const PopupMenuThemeData(
