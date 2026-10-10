@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
 class SubscriptionRemindersScreen extends StatefulWidget {
@@ -87,7 +88,7 @@ class _SubscriptionRemindersScreenState extends State<SubscriptionRemindersScree
                           final raw = reminders[index];
                           final r = raw is Map ? raw : {};
                           final read = r['read_at'] != null;
-                          return Card(
+                          return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                             child: ListTile(
                               leading: Icon(read ? Icons.notifications_none : Icons.notifications_active, color: read ? null : Theme.of(context).colorScheme.primary),
                               title: Text('${r['title'] ?? typeLabel(r['reminder_type'])}'),
