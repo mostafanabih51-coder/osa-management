@@ -431,7 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(8),
               radius: 20,
               blur: 18,
-              tint: AppColors.magenta.withValues(alpha: 0.82),
+              tint: AppColors.magenta,
               borderColor: AppColors.text.withValues(alpha: 0.18),
               child: Wrap(
                 spacing: 8,
@@ -568,7 +568,7 @@ class _QuickAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         radius: 14,
         blur: 12,
-        tint: AppColors.magenta.withValues(alpha: 0.84),
+        tint: AppColors.magenta,
         borderColor: AppColors.text.withValues(alpha: 0.18),
         child: Row(
           mainAxisSize: MainAxisSize.min,
