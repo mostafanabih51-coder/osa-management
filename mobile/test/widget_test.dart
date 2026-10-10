@@ -18,6 +18,10 @@ void main() {
     expect(AppTheme.light().iconTheme.color, AppColors.yellow);
     expect(AppTheme.light().floatingActionButtonTheme.backgroundColor, AppColors.magenta);
     expect(AppTheme.light().filledButtonTheme.style?.backgroundColor?.resolve({}), AppColors.magenta);
+    expect(AppTheme.light().filledButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
+    expect(AppTheme.light().elevatedButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
+    expect(AppTheme.light().textButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
+    expect(AppTheme.light().outlinedButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
     expect(const GlassSurface(child: SizedBox()).tint, AppColors.magenta);
   });
 
