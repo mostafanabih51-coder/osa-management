@@ -226,7 +226,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               const SizedBox(height: 16),
               FilledButton.icon(
                 onPressed: () => open(const RolePortalScreen()),
-                icon: const Icon(Icons.open_in_new),
+                icon: const Icon(Icons.open_in_new, color: AppColors.yellow),
                 label: const Text('فتح بوابة المستحقات'),
               ),
             ],
