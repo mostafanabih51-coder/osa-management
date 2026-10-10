@@ -32,7 +32,7 @@ class AppTheme {
       onSecondary: Colors.white,
       tertiary: AppColors.surface,
       onTertiary: Colors.white,
-      error: const Color(0xFFFF7B86),
+      error: const AppColors.magenta,
       onError: AppColors.navy,
       surface: AppColors.surface,
       onSurface: AppColors.text,
@@ -94,7 +94,7 @@ class AppTheme {
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Color(0xFFFF7B86)),
+          borderSide: const BorderSide(color: AppColors.magenta),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
