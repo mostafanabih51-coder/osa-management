@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         radius: 22,
         blur: 18,
-        tint: AppColors.magenta.withValues(alpha: 0.94),
+        tint: AppColors.magenta,
         borderColor: AppColors.text.withValues(alpha: 0.22),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 118),
@@ -246,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(20),
               radius: 24,
               blur: 22,
-              tint: AppColors.magenta.withValues(alpha: 0.84),
+              tint: AppColors.magenta,
               borderColor: AppColors.text.withValues(alpha: 0.28),
               child: Stack(
                 children: [
