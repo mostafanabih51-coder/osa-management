@@ -1,3 +1,5 @@
+import 'dart:ui' as ui;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/theme/app_theme.dart';
@@ -43,7 +45,59 @@ class OSAApp extends StatelessWidget {
       ],
       builder: (context, child) => Directionality(
         textDirection: TextDirection.rtl,
-        child: child ?? const SizedBox.shrink(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  colors: [
+                    Color(0xFF384660),
+                    Color(0xFF303D55),
+                    Color(0xFF263248),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              top: -110,
+              right: -95,
+              child: IgnorePointer(
+                child: ImageFiltered(
+                  imageFilter: ui.ImageFilter.blur(sigmaX: 46, sigmaY: 46),
+                  child: Container(
+                    width: 280,
+                    height: 280,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFB43A6C).withValues(alpha: 0.18),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: -135,
+              left: -105,
+              child: IgnorePointer(
+                child: ImageFiltered(
+                  imageFilter: ui.ImageFilter.blur(sigmaX: 54, sigmaY: 54),
+                  child: Container(
+                    width: 320,
+                    height: 320,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFFFC822).withValues(alpha: 0.08),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            child ?? const SizedBox.shrink(),
+          ],
+        ),
       ),
       home: initialLoggedIn ? const DashboardScreen() : const LoginScreen(),
     );
