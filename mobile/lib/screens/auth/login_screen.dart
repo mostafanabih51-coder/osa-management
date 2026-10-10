@@ -112,7 +112,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ],
                         ),
-                        child: const Icon(Icons.school_rounded, color: Colors.white, size: 46),
+                        child: const Icon(Icons.school_rounded, color: AppColors.yellow, size: 46),
                       ),
                       const SizedBox(height: 18),
                       const Text(
@@ -220,7 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   child: Row(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      const Icon(Icons.error_outline_rounded, color: AppColors.magenta, size: 20),
+                                      const Icon(Icons.error_outline_rounded, color: AppColors.yellow, size: 20),
                                       const SizedBox(width: 8),
                                       Expanded(
                                         child: Text(
