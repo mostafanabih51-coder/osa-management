@@ -51,7 +51,7 @@ class LessonController extends Controller
             if($l->status==='completed') {
                 $month=$l->starts_at?->format('Y-m');
                 if($l->type==='private' && $l->student_id)$this->countPlanLesson((int)$l->student_id,(string)$l->subject,false,$month);
-                if($l->type==='group'){$ids=Group::find($l->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$l->subject,true,$month);}
+                if($l->type==='group'){$ids=Attendance::where('lesson_id',$l->id)->whereIn('status',['present','late'])->pluck('student_id');foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$l->subject,true,$month);}
                 $this->recordSubscriptionUsage($l);
                 $this->ensureCompletedLessonDues($l);
             }
@@ -118,7 +118,7 @@ class LessonController extends Controller
                 $month=$lesson->starts_at?->format('Y-m');
                 if($lesson->type==='private' && $lesson->student_id) $this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$month);
                 if($lesson->type==='group') {
-                    $ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();
+                    $ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id');
                     foreach($ids as $studentId) $this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$month);
                 }
                 $this->recordSubscriptionUsage($lesson);
@@ -204,7 +204,7 @@ class LessonController extends Controller
                 return;
             }
             if($lesson->type==='private' && $lesson->student_id)$this->countPlanLesson((int)$lesson->student_id,(string)$lesson->subject,false,$lesson->starts_at?->format('Y-m'));
-            if($lesson->type==='group'){$ids=Group::find($lesson->group_id)?->students()->pluck('students.id') ?? collect();foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$lesson->starts_at?->format('Y-m'));}
+            if($lesson->type==='group'){$ids=Attendance::where('lesson_id',$lesson->id)->whereIn('status',['present','late'])->pluck('student_id');foreach($ids as $studentId)$this->countPlanLesson((int)$studentId,(string)$lesson->subject,true,$lesson->starts_at?->format('Y-m'));}
             $lesson->update(['status'=>'completed','completed_at'=>now()]);
             $this->recordSubscriptionUsage($lesson->fresh());
             $this->ensureCompletedLessonDues($lesson->fresh());
