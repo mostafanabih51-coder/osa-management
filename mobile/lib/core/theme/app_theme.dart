@@ -104,6 +104,64 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w800),
         ),
       ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.magenta,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(48, 50),
+          elevation: 0,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w800),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: AppColors.gold,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: AppColors.gold,
+        foregroundColor: AppColors.navy,
+        elevation: 3,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+      ),
+      dropdownMenuTheme: const DropdownMenuThemeData(
+        textStyle: TextStyle(color: AppColors.text),
+        inputDecorationTheme: InputDecorationTheme(
+          filled: true,
+          fillColor: AppColors.surfaceDeep,
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: AppColors.surfaceDeep,
+        selectedColor: AppColors.magenta,
+        secondarySelectedColor: AppColors.magenta,
+        disabledColor: AppColors.surfaceDeep,
+        labelStyle: const TextStyle(color: AppColors.text, fontWeight: FontWeight.w600),
+        secondaryLabelStyle: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: const BorderSide(color: AppColors.border),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surface,
+        modalBackgroundColor: AppColors.surface,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+        dragHandleColor: AppColors.muted,
+      ),
+      expansionTileTheme: const ExpansionTileThemeData(
+        iconColor: AppColors.gold,
+        collapsedIconColor: AppColors.muted,
+        textColor: AppColors.text,
+        collapsedTextColor: AppColors.text,
+        tilePadding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        childrenPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: AppColors.text,
