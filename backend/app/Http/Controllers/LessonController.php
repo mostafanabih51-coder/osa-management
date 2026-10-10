@@ -87,6 +87,29 @@ class LessonController extends Controller
             $transitionedToCompleted=$lesson->status!=='completed' && (($d['status']??$lesson->status)==='completed');
             $td=TeacherLessonDue::where('lesson_id',$lesson->id)->lockForUpdate()->first();
             $sd=SupervisorDue::where('lesson_id',$lesson->id)->lockForUpdate()->first();
+
+            // Re-check protected fields against the locked, current database state.
+            // The earlier request-level checks alone can become stale during a race.
+            $financialFields=['type','teacher_id','supervisor_id','group_id','student_id','subject','teacher_rate','supervisor_rate'];
+            $financiallyPaid=(($td&&(float)$td->paid_amount>0)||($sd&&(float)$sd->paid_amount>0));
+            if($financiallyPaid) foreach($financialFields as $f) {
+                if(array_key_exists($f,$d) && (string)($d[$f] ?? '') !== (string)($lesson->{$f} ?? '')) {
+                    throw ValidationException::withMessages(['lesson'=>'لا يمكن تغيير بيانات الحصة المالية بعد صرف المستحق.']);
+                }
+            }
+            if($lesson->status==='completed') {
+                if(isset($d['status']) && $d['status']!=='completed') {
+                    throw ValidationException::withMessages(['lesson'=>'لا يمكن إعادة فتح حصة مكتملة.']);
+                }
+                foreach($financialFields as $f) {
+                    if(array_key_exists($f,$d) && (string)($d[$f] ?? '') !== (string)($lesson->{$f} ?? '')) {
+                        throw ValidationException::withMessages(['lesson'=>'لا يمكن تعديل بيانات الحصة المرتبطة بالاشتراك أو المستحقات بعد اكتمالها. أنشئ إجراء تصحيح منفصلًا للحفاظ على السجلات المالية.']);
+                    }
+                }
+                if(array_key_exists('starts_at',$d) && strtotime((string)$d['starts_at']) !== strtotime((string)$lesson->starts_at)) {
+                    throw ValidationException::withMessages(['lesson'=>'لا يمكن تغيير تاريخ بداية حصة مكتملة لأنه يؤثر على عداد الحصص والاشتراك.']);
+                }
+            }
             $lesson->update($d);
             if($td){$td->teacher_id=$lesson->teacher_id;if((float)$td->paid_amount===0&&array_key_exists('teacher_rate',$d))$td->amount=$lesson->teacher_due;$td->status=(float)$td->paid_amount>=(float)$td->amount?'paid':'unpaid';$td->save();}
             if($lesson->supervisor_id){if(!$sd && $lesson->status==='completed')SupervisorDue::firstOrCreate(['lesson_id'=>$lesson->id],['supervisor_id'=>$lesson->supervisor_id,'amount'=>$lesson->supervisor_due,'paid_amount'=>0,'status'=>'unpaid']);elseif($sd && (float)$sd->paid_amount===0){$sd->supervisor_id=$lesson->supervisor_id;if(array_key_exists('supervisor_rate',$d))$sd->amount=$lesson->supervisor_due;$sd->save();}}elseif($sd && (float)$sd->paid_amount===0){$sd->delete();}
