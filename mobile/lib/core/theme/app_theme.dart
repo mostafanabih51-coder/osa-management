@@ -9,8 +9,8 @@ class AppColors {
   static const navy = blueGray;
   static const magenta = Color(0xFFB43A6C);
   static const yellow = Color(0xFFFFC822);
-  static const background = magenta;
-  static const surface = blueGray;
+  static const background = blueGray;
+  static const surface = magenta;
   static const surfaceDeep = blueGray;
   static const text = Color(0xFFF1F3F8);
   static const muted = Color(0xFFD6DCE7);
@@ -52,7 +52,7 @@ class AppTheme {
             displayColor: AppColors.text,
           ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.background,
+        backgroundColor: AppColors.blueGray,
         foregroundColor: AppColors.text,
         centerTitle: false,
         elevation: 0,
@@ -64,7 +64,7 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface.withValues(alpha: 0.82),
+        color: AppColors.surface,
         elevation: 0,
         shadowColor: AppColors.magenta.withValues(alpha: 0.16),
         surfaceTintColor: Color(0x14F1F3F8),
