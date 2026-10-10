@@ -311,7 +311,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('المدرسون'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => addOrEdit(), backgroundColor: AppColors.red,
+        onPressed: () => addOrEdit(), backgroundColor: AppColors.magenta,
         icon: const Icon(Icons.person_add), label: const Text('إضافة مدرس'),
       ),
       body: loading
