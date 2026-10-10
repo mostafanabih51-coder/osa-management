@@ -52,19 +52,18 @@ class SubscriptionUsageRecorder
                 ->whereIn('status', ['present', 'late'])
                 ->pluck('student_id');
             foreach ($studentIds as $studentId) {
-                $student = (object) ['id' => $studentId];
-                if (SubscriptionLessonUsage::where('lesson_id', $lesson->id)->where('student_id', $student->id)->exists()) continue;
-                $subscription = Subscription::where('student_id', $student->id)
+                if (SubscriptionLessonUsage::where('lesson_id', $lesson->id)->where('student_id', $studentId)->exists()) continue;
+                $subscription = Subscription::where('student_id', $studentId)
                     ->where('subject', $lesson->subject)
                     ->where('service_type', 'group')
-                    ->where('group_id', $group->id)
+                    ->where('group_id', $lesson->group_id)
                     ->whereIn('status', ['active', 'expired'])
                     ->whereDate('starts_on', '<=', $lessonDate)
                     ->whereDate('ends_on', '>=', $lessonDate)
                     ->orderByDesc('starts_on')->first();
                 if (!$subscription) continue;
                 $usage = SubscriptionLessonUsage::firstOrCreate(
-                    ['lesson_id' => $lesson->id, 'student_id' => $student->id],
+                    ['lesson_id' => $lesson->id, 'student_id' => $studentId],
                     ['subscription_id' => $subscription->id, 'lesson_date' => $lessonDate, 'service_type' => 'group']
                 );
                 if ($usage->wasRecentlyCreated) $created++;
