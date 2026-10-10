@@ -56,8 +56,8 @@ class OSAApp extends StatelessWidget {
                   colors: [
                     Color(0xFF384660),
                     Color(0xFF384660),
-                    Color(0xFF303D55),
-                    Color(0xFF263248),
+                    Color(0xFF384660),
+                    Color(0xFF384660),
                   ],
                 ),
               ),
