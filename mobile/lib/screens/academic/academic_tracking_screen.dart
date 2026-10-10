@@ -256,7 +256,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
                             });
                           }
                         },
-                        icon: const Icon(Icons.upload_file),
+                        icon: const Icon(Icons.upload_file, color: AppColors.yellow),
                         label: const Text('اختيار ملف من الهاتف'),
                       )
                     else
@@ -394,7 +394,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
                   padding: const EdgeInsets.all(4),
                   child: FilledButton.icon(
                     onPressed: addEvaluation,
-                    icon: const Icon(Icons.star),
+                    icon: const Icon(Icons.star, color: AppColors.yellow),
                     label: const Text('تقييم'),
                   ),
                 ),
@@ -404,7 +404,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
                   padding: const EdgeInsets.all(4),
                   child: FilledButton.icon(
                     onPressed: addResource,
-                    icon: const Icon(Icons.attach_file),
+                    icon: const Icon(Icons.attach_file, color: AppColors.yellow),
                     label: const Text('محتوى / مرفق'),
                   ),
                 ),
