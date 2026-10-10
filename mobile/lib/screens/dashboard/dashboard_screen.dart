@@ -96,22 +96,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return AnimatedPressable(
       onTap: () => open(page),
       borderRadius: BorderRadius.circular(22),
-      child: Container(
-        constraints: const BoxConstraints(minHeight: 150),
+      child: GlassSurface(
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.14)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.12),
-              blurRadius: 16,
-              offset: const Offset(0, 7),
-            ),
-          ],
-        ),
-        child: Column(
+        radius: 22,
+        blur: 18,
+        tint: color.withValues(alpha: 0.30),
+        borderColor: AppColors.text.withValues(alpha: 0.22),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 118),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -153,6 +146,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
