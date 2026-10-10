@@ -58,7 +58,20 @@ class _ReportsScreenState extends State<ReportsScreen> {
       body: RefreshIndicator(
         onRefresh: loadReports,
         child: ListView(padding: const EdgeInsets.all(16), children: [
-          Card(child: ListTile(leading: IconButton(onPressed: () => changeMonth(-1), icon: const Icon(Icons.chevron_right)), title: Center(child: Text(month, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))), trailing: IconButton(onPressed: () => changeMonth(1), icon: const Icon(Icons.chevron_left)))),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: GlassSurface(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              radius: 20,
+              blur: 12,
+              tint: const Color(0x22FFFFFF),
+              child: Row(children: [
+                IconButton(tooltip: 'الشهر السابق', onPressed: () => changeMonth(-1), icon: const Icon(Icons.chevron_right_rounded)),
+                Expanded(child: Center(child: Text(month, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.gold)))),
+                IconButton(tooltip: 'الشهر التالي', onPressed: () => changeMonth(1), icon: const Icon(Icons.chevron_left_rounded)),
+              ]),
+            ),
+          ),
           _card('إجمالي الدخل', data?['income'] ?? 0),
           _card('إجمالي المصروفات', data?['expenses'] ?? 0),
           _card('مستحقات المدرسين', data?['teacher_dues'] ?? 0),
@@ -71,5 +84,31 @@ class _ReportsScreenState extends State<ReportsScreen> {
     );
   }
 
-  Widget _card(String title, dynamic value) => Card(margin: const EdgeInsets.only(bottom: 12), child: ListTile(leading: const Icon(Icons.bar_chart, color: AppColors.red), title: Text(title), trailing: Text('$value', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))));
+  Widget _card(String title, dynamic value) => Padding(
+    padding: const EdgeInsets.only(bottom: 12),
+    child: GlassSurface(
+      padding: EdgeInsets.zero,
+      radius: 20,
+      blur: 12,
+      tint: const Color(0x1FFFFFFF),
+      borderColor: AppColors.border,
+      child: ListTile(
+        leading: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: AppColors.magenta.withValues(alpha: 0.22),
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
+          ),
+          child: const Icon(Icons.bar_chart_rounded, color: AppColors.gold),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        trailing: Text(
+          '$value',
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.gold),
+        ),
+      ),
+    ),
+  );
 }
