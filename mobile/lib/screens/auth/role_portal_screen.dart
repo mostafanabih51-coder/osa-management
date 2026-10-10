@@ -127,7 +127,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                       gradient: const LinearGradient(
                         begin: Alignment.topRight,
                         end: Alignment.bottomLeft,
-                        colors: [AppColors.magenta, Color(0xFF873052)],
+                        colors: [AppColors.magenta, AppColors.surfaceDeep],
                       ),
                       borderRadius: BorderRadius.circular(24),
                       boxShadow: [
