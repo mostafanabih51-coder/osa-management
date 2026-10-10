@@ -342,7 +342,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                                 borderRadius: BorderRadius.circular(15),
                                 border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
                               ),
-                              child: const Icon(Icons.groups_rounded, color: AppColors.gold),
+                              child: const Icon(Icons.groups_rounded, color: AppColors.yellow),
                             ),
                             const SizedBox(width: 12),
                             Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [

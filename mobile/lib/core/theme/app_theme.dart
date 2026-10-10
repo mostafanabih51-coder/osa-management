@@ -119,13 +119,13 @@ class AppTheme {
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
-          foregroundColor: AppColors.gold,
+          foregroundColor: AppColors.yellow,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           textStyle: const TextStyle(fontWeight: FontWeight.w700),
         ),
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
-        backgroundColor: AppColors.gold,
+        backgroundColor: AppColors.yellow,
         foregroundColor: AppColors.navy,
         elevation: 3,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
@@ -158,7 +158,7 @@ class AppTheme {
         dragHandleColor: AppColors.muted,
       ),
       expansionTileTheme: const ExpansionTileThemeData(
-        iconColor: AppColors.gold,
+        iconColor: AppColors.yellow,
         collapsedIconColor: AppColors.muted,
         textColor: AppColors.text,
         collapsedTextColor: AppColors.text,
@@ -201,7 +201,7 @@ class AppTheme {
       ),
       dividerTheme: const DividerThemeData(color: AppColors.border, thickness: 1),
       listTileTheme: const ListTileThemeData(
-        iconColor: AppColors.gold,
+        iconColor: AppColors.yellow,
         textColor: AppColors.text,
       ),
       dialogTheme: DialogThemeData(
@@ -213,7 +213,7 @@ class AppTheme {
       dataTableTheme: DataTableThemeData(
         headingRowColor: const WidgetStatePropertyAll(AppColors.surfaceDeep),
         headingTextStyle: const TextStyle(
-          color: AppColors.gold,
+          color: AppColors.yellow,
           fontWeight: FontWeight.w800,
         ),
         dataTextStyle: const TextStyle(color: AppColors.text, fontSize: 14),
@@ -222,9 +222,9 @@ class AppTheme {
         columnSpacing: 22,
       ),
       tabBarTheme: const TabBarThemeData(
-        indicatorColor: AppColors.gold,
+        indicatorColor: AppColors.yellow,
         indicatorSize: TabBarIndicatorSize.tab,
-        labelColor: AppColors.gold,
+        labelColor: AppColors.yellow,
         unselectedLabelColor: AppColors.muted,
         labelStyle: TextStyle(fontWeight: FontWeight.w800),
         unselectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
@@ -233,8 +233,8 @@ class AppTheme {
         backgroundColor: AppColors.surface,
         headerBackgroundColor: AppColors.magenta,
         headerForegroundColor: Colors.white,
-        todayForegroundColor: const WidgetStatePropertyAll(AppColors.gold),
-        todayBorder: const BorderSide(color: AppColors.gold),
+        todayForegroundColor: const WidgetStatePropertyAll(AppColors.yellow),
+        todayBorder: const BorderSide(color: AppColors.yellow),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         yearForegroundColor: const WidgetStatePropertyAll(AppColors.text),
         weekdayStyle: const TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700),
@@ -247,7 +247,7 @@ class AppTheme {
         hourMinuteTextColor: AppColors.text,
         dayPeriodColor: AppColors.magenta,
         dayPeriodTextColor: Colors.white,
-        entryModeIconColor: AppColors.gold,
+        entryModeIconColor: AppColors.yellow,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       ),
       tooltipTheme: TooltipThemeData(
@@ -261,12 +261,12 @@ class AppTheme {
       ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(
-          foregroundColor: AppColors.gold,
+          foregroundColor: AppColors.yellow,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         ),
       ),
       textSelectionTheme: const TextSelectionThemeData(
-        cursorColor: AppColors.gold,
+        cursorColor: AppColors.yellow,
         selectionColor: Color(0x66B43A6C),
         selectionHandleColor: AppColors.magenta,
       ),

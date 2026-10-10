@@ -67,7 +67,7 @@ class _ReportsScreenState extends State<ReportsScreen> {
               tint: const Color(0x22FFFFFF),
               child: Row(children: [
                 IconButton(tooltip: 'الشهر السابق', onPressed: () => changeMonth(-1), icon: const Icon(Icons.chevron_right_rounded)),
-                Expanded(child: Center(child: Text(month, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.gold)))),
+                Expanded(child: Center(child: Text(month, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.yellow)))),
                 IconButton(tooltip: 'الشهر التالي', onPressed: () => changeMonth(1), icon: const Icon(Icons.chevron_left_rounded)),
               ]),
             ),
@@ -101,12 +101,12 @@ class _ReportsScreenState extends State<ReportsScreen> {
             borderRadius: BorderRadius.circular(14),
             border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
           ),
-          child: const Icon(Icons.bar_chart_rounded, color: AppColors.gold),
+          child: const Icon(Icons.bar_chart_rounded, color: AppColors.yellow),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: Text(
           '$value',
-          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.gold),
+          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.yellow),
         ),
       ),
     ),

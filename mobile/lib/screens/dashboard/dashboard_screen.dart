@@ -196,7 +196,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.cloud_off_rounded,
-                  color: AppColors.gold, size: 42),
+                  color: AppColors.yellow, size: 42),
               const SizedBox(height: 12),
               Text(error!, textAlign: TextAlign.center),
               const SizedBox(height: 12),
@@ -216,7 +216,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.account_balance_wallet,
-                  size: 56, color: AppColors.gold),
+                  size: 56, color: AppColors.yellow),
               const SizedBox(height: 12),
               Text(role == 'teacher' ? 'بوابة المدرس' : 'بوابة المشرف',
                   style: Theme.of(context).textTheme.headlineSmall),
@@ -236,7 +236,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     } else {
       body = RefreshIndicator(
         onRefresh: loadDashboard,
-        color: AppColors.gold,
+        color: AppColors.yellow,
         backgroundColor: AppColors.surface,
         child: ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -292,7 +292,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             width: 7,
                             height: 7,
                             decoration: const BoxDecoration(
-                              color: AppColors.gold,
+                              color: AppColors.yellow,
                               shape: BoxShape.circle,
                             ),
                           ),
@@ -347,7 +347,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   width: 30,
                   height: 3,
                   decoration: BoxDecoration(
-                    color: AppColors.gold,
+                    color: AppColors.yellow,
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),

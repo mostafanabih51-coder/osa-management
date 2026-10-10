@@ -79,7 +79,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
             color: AppColors.magenta.withValues(alpha: 0.15),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(icon, color: AppColors.gold, size: 21),
+          child: Icon(icon, color: AppColors.yellow, size: 21),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
         initiallyExpanded: true,
@@ -116,7 +116,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: load,
-              color: AppColors.gold,
+              color: AppColors.yellow,
               backgroundColor: AppColors.surface,
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
@@ -158,7 +158,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                               ),
                             ),
                             const Spacer(),
-                            const Icon(Icons.verified_user_outlined, color: AppColors.gold, size: 22),
+                            const Icon(Icons.verified_user_outlined, color: AppColors.yellow, size: 22),
                           ],
                         ),
                         const SizedBox(height: 18),
@@ -194,7 +194,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Icon(Icons.info_outline_rounded, color: AppColors.gold),
+                            const Icon(Icons.info_outline_rounded, color: AppColors.yellow),
                             const SizedBox(width: 10),
                             Expanded(child: Text(error, style: const TextStyle(height: 1.45))),
                           ],
@@ -204,7 +204,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                   const SizedBox(height: 14),
                   Row(
                     children: [
-                      _metric('الطلاب', '${students.length}', Icons.people_alt_rounded, AppColors.gold),
+                      _metric('الطلاب', '${students.length}', Icons.people_alt_rounded, AppColors.yellow),
                       const SizedBox(width: 9),
                       _metric('الحصص', '${lessons.length}', Icons.event_available_rounded, AppColors.magenta),
                       const SizedBox(width: 9),
@@ -217,7 +217,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                     students.map((s) => ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: AppColors.surfaceDeep,
-                        child: Icon(Icons.person_outline_rounded, color: AppColors.gold),
+                        child: Icon(Icons.person_outline_rounded, color: AppColors.yellow),
                       ),
                       title: Text('${s['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text(
@@ -233,7 +233,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                     lessons.map((l) => ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: AppColors.surfaceDeep,
-                        child: Icon(Icons.menu_book_rounded, color: AppColors.gold),
+                        child: Icon(Icons.menu_book_rounded, color: AppColors.yellow),
                       ),
                       title: Text('${l['subject'] ?? 'حصة'}', style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text(
@@ -247,7 +247,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                     dues.map((d) => ListTile(
                       leading: const CircleAvatar(
                         backgroundColor: AppColors.surfaceDeep,
-                        child: Icon(Icons.payments_outlined, color: AppColors.gold),
+                        child: Icon(Icons.payments_outlined, color: AppColors.yellow),
                       ),
                       title: Text('المبلغ: ${d['amount'] ?? 0}', style: const TextStyle(fontWeight: FontWeight.w700)),
                       subtitle: Text('المدفوع: ${d['paid_amount'] ?? 0}'),
