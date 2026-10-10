@@ -42,8 +42,8 @@ class AppTheme {
       useMaterial3: true,
       brightness: Brightness.dark,
       colorScheme: scheme,
-      scaffoldBackgroundColor: AppColors.background,
-      canvasColor: AppColors.background,
+      scaffoldBackgroundColor: Colors.transparent,
+      canvasColor: Colors.transparent,
       dividerColor: AppColors.border,
       textTheme: ThemeData.dark().textTheme.apply(
             bodyColor: AppColors.text,
@@ -62,8 +62,10 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
-        elevation: 0,
+        color: AppColors.surface.withValues(alpha: 0.82),
+        elevation: 1,
+        shadowColor: AppColors.magenta.withValues(alpha: 0.12),
+        surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
