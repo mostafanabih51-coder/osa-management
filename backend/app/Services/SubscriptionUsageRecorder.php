@@ -2,7 +2,7 @@
 
 namespace App\Services;
 
-use App\Models\Group;
+use App\Models\Attendance;
 use App\Models\Lesson;
 use App\Models\Subscription;
 use App\Models\SubscriptionLessonUsage;
@@ -48,9 +48,11 @@ class SubscriptionUsageRecorder
         }
 
         if ($lesson->type === 'group' && $lesson->group_id) {
-            $group = Group::with('students')->find($lesson->group_id);
-            if (!$group) return 0;
-            foreach ($group->students as $student) {
+            $studentIds = Attendance::where('lesson_id', $lesson->id)
+                ->whereIn('status', ['present', 'late'])
+                ->pluck('student_id');
+            foreach ($studentIds as $studentId) {
+                $student = (object) ['id' => $studentId];
                 if (SubscriptionLessonUsage::where('lesson_id', $lesson->id)->where('student_id', $student->id)->exists()) continue;
                 $subscription = Subscription::where('student_id', $student->id)
                     ->where('subject', $lesson->subject)
