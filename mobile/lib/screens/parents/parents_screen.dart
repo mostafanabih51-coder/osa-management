@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 
@@ -235,7 +236,7 @@ class _ParentsScreenState extends State<ParentsScreen> {
                           itemCount: parents.length,
                           itemBuilder: (context, index) {
                             final parent = parents[index];
-                            return Card(
+                            return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                               child: ListTile(
                                 onTap: () => details(parent),
                                 leading: const CircleAvatar(
