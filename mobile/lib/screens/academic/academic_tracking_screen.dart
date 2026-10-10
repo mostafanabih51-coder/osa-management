@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/api_service.dart';
 
@@ -419,7 +420,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 ...plans.map(
-                  (plan) => Card(
+                  (plan) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                     child: ListTile(
                       onTap: () => editPlan(plan),
                       title: Text('${plan['subject'] ?? ''}'),
