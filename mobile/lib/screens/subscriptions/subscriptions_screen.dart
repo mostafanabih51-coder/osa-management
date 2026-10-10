@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
 import '../../services/api_service.dart';
 
 class SubscriptionsScreen extends StatefulWidget {
@@ -390,7 +391,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     itemBuilder: (_, i) {
                       final s = displayedSubscriptions[i];
                       final student = s['student'];
-                      return Card(
+                      return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                         child: ListTile(
                           title: Text('${student?['name'] ?? 'طالب'}'),
                           subtitle: Text(
