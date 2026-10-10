@@ -14,6 +14,7 @@ void main() {
     expect(AppColors.surface, const Color(0xFFB43A6C));
     expect(AppColors.surfaceDeep, const Color(0xFF384660));
     expect(AppTheme.light().cardTheme.color, AppColors.magenta);
+    expect(AppTheme.light().cardTheme.surfaceTintColor, Colors.transparent);
     expect(AppTheme.light().iconTheme.color, AppColors.yellow);
     expect(AppTheme.light().floatingActionButtonTheme.backgroundColor, AppColors.magenta);
     expect(AppTheme.light().filledButtonTheme.style?.backgroundColor?.resolve({}), AppColors.magenta);
