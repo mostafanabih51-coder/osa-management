@@ -62,19 +62,19 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface.withValues(alpha: 0.30),
+        color: AppColors.surface.withValues(alpha: 0.82),
         elevation: 0,
-        shadowColor: AppColors.magenta.withValues(alpha: 0.34),
+        shadowColor: AppColors.magenta.withValues(alpha: 0.16),
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AppColors.text.withValues(alpha: 0.30), width: 1),
+          side: BorderSide(color: AppColors.text.withValues(alpha: 0.18), width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surfaceDeep.withValues(alpha: 0.48),
+        fillColor: AppColors.surfaceDeep.withValues(alpha: 0.82),
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 17),
         labelStyle: const TextStyle(color: AppColors.muted),
         hintStyle: const TextStyle(color: AppColors.muted),
@@ -292,8 +292,8 @@ class GlassSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
     this.blur = 16,
-    this.tint = const Color(0x26384360),
-    this.borderColor = const Color(0x66F1F3F8),
+    this.tint = const Color(0xD9384660),
+    this.borderColor = const Color(0x35F1F3F8),
   });
 
   @override
@@ -312,13 +312,13 @@ class GlassSurface extends StatelessWidget {
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
               colors: [
-                Color(0x50F1F3F8),
-                Color(0x30384660),
-                Color(0x40B43A6C),
-                Color(0x25FFC822),
-                Color(0x18303D55),
+                Color(0x28FFFFFF),
+                Color(0x10FFFFFF),
+                Color(0x06384660),
+                Color(0x0DB43A6C),
+                Color(0x06303D55),
               ],
-              stops: [0.0, 0.25, 0.58, 0.78, 1.0],
+              stops: [0.0, 0.18, 0.48, 0.76, 1.0],
             ),
             boxShadow: [
               BoxShadow(
@@ -327,8 +327,8 @@ class GlassSurface extends StatelessWidget {
                 offset: const Offset(0, 10),
               ),
               BoxShadow(
-                color: AppColors.magenta.withValues(alpha: 0.16),
-                blurRadius: 20,
+                color: AppColors.magenta.withValues(alpha: 0.09),
+                blurRadius: 18,
                 spreadRadius: -4,
               ),
             ],
