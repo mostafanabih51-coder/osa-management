@@ -327,7 +327,31 @@ class _TeachersScreenState extends State<TeachersScreen> {
                   : ListView(
                       padding: const EdgeInsets.fromLTRB(16, 12, 16, 90),
                       children: [
-                        Card(child: Padding(padding: const EdgeInsets.all(14), child: Text('المدرسون: ${teachers.length} • الطلاب المتاحون للربط: ${students.length}'))),
+                        GlassSurface(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          radius: 20,
+                          blur: 12,
+                          tint: const Color(0x22FFFFFF),
+                          borderColor: AppColors.border,
+                          child: Row(children: [
+                            Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: AppColors.magenta.withValues(alpha: 0.22),
+                                borderRadius: BorderRadius.circular(15),
+                                border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
+                              ),
+                              child: const Icon(Icons.groups_rounded, color: AppColors.gold),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                              const Text('إدارة المدرسين', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16)),
+                              const SizedBox(height: 4),
+                              Text('المدرسون: ${teachers.length} • الطلاب المتاحون للربط: ${students.length}', style: const TextStyle(color: AppColors.muted, height: 1.35)),
+                            ])),
+                          ]),
+                        ),
                         if (teachers.isEmpty) const Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مدرسون بعد.'))),
                         ...teachers.map((teacher) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                           child: ListTile(
