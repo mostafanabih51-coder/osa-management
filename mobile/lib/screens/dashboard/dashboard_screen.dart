@@ -247,29 +247,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               radius: 24,
               blur: 22,
               tint: AppColors.magenta,
-              borderColor: AppColors.text.withValues(alpha: 0.28),
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: -34,
-                    left: -18,
-                    child: IgnorePointer(
-                      child: Container(
-                        width: 150,
-                        height: 95,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(80),
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.white.withValues(alpha: 0.14),
-                              Colors.white.withValues(alpha: 0),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Column(
+              borderColor: AppColors.magenta,
+              child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
@@ -278,10 +257,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             width: 46,
                             height: 46,
                             decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.13),
+                              color: AppColors.blueGray,
                               borderRadius: BorderRadius.circular(15),
                               border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.23),
+                                color: AppColors.blueGray,
                               ),
                             ),
                             child: const Icon(Icons.school_rounded,
