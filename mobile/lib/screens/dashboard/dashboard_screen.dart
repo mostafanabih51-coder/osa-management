@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         radius: 22,
         blur: 18,
-        tint: color.withValues(alpha: 0.84),
+        tint: AppColors.magenta.withValues(alpha: 0.94),
         borderColor: AppColors.text.withValues(alpha: 0.22),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 118),
@@ -110,10 +110,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: Colors.white, size: 30),
+                Icon(icon, color: AppColors.yellow, size: 30),
                 const Spacer(),
                 Icon(Icons.arrow_outward_rounded,
-                    color: Colors.white.withValues(alpha: 0.78), size: 19),
+                    color: AppColors.yellow, size: 19),
               ],
             ),
             const SizedBox(height: 16),
@@ -285,7 +285,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               ),
                             ),
                             child: const Icon(Icons.school_rounded,
-                                color: Colors.white, size: 27),
+                                color: AppColors.yellow, size: 27),
                           ),
                           const Spacer(),
                           Container(
@@ -502,7 +502,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: const [
-                  Icon(Icons.school_rounded, color: Colors.white, size: 35),
+                  Icon(Icons.school_rounded, color: AppColors.yellow, size: 35),
                   SizedBox(height: 12),
                   Text(
                     'Online School Academy',
@@ -573,7 +573,7 @@ class _QuickAction extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 18, color: AppColors.text),
+            Icon(icon, size: 18, color: AppColors.yellow),
             const SizedBox(width: 7),
             Text(
               label,
