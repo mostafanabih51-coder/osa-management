@@ -370,7 +370,7 @@ class _StudentsScreenState extends State<StudentsScreen> {
                             return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                               child: ListTile(
                                 onTap: () => details(id(student)),
-                                leading: const CircleAvatar(child: Icon(Icons.person)),
+                                leading: const CircleAvatar(backgroundColor: AppColors.blueGray, foregroundColor: AppColors.yellow, child: Icon(Icons.person)),
                                 title: Text(
                                   '${student['name'] ?? ''}',
                                   style: const TextStyle(fontWeight: FontWeight.bold),
