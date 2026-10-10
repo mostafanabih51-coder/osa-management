@@ -20,7 +20,6 @@ class ModulePlaceholderScreen extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 32),
               radius: 28,
               blur: 16,
-              tint: const Color(0x24FFFFFF),
               borderColor: AppColors.border,
               child: Column(mainAxisSize: MainAxisSize.min, children: [
                 Container(

@@ -89,7 +89,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
     } else {
       body = RefreshIndicator(onRefresh: load, child: ListView.builder(padding: const EdgeInsets.fromLTRB(16, 12, 16, 90), itemCount: expenses.length, itemBuilder: (_, i) {
         final x = expenses[i];
-        return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(title: Text('${x['category'] ?? 'مصروف'}'), subtitle: Text('${x['spent_on'] ?? ''}\n${x['description'] ?? ''}'), isThreeLine: true, trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text('${x['amount'] ?? 0}'), IconButton(onPressed: () => form(item: x), icon: const Icon(Icons.edit)), IconButton(onPressed: () => remove(x), icon: const Icon(Icons.delete))])));
+        return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(title: Text('${x['category'] ?? 'مصروف'}'), subtitle: Text('${x['spent_on'] ?? ''}\n${x['description'] ?? ''}'), isThreeLine: true, trailing: Row(mainAxisSize: MainAxisSize.min, children: [Text('${x['amount'] ?? 0}'), IconButton(onPressed: () => form(item: x), icon: const Icon(Icons.edit)), IconButton(onPressed: () => remove(x), icon: const Icon(Icons.delete))])));
       }));
     }
     return Scaffold(appBar: AppBar(title: const Text('المصروفات'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]), floatingActionButton: FloatingActionButton.extended(onPressed: () => form(), icon: const Icon(Icons.add), label: const Text('إضافة مصروف')), body: body);

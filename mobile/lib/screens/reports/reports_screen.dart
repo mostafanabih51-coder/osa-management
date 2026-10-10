@@ -64,7 +64,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
               radius: 20,
               blur: 12,
-              tint: const Color(0x22FFFFFF),
               child: Row(children: [
                 IconButton(tooltip: 'الشهر السابق', onPressed: () => changeMonth(-1), icon: const Icon(Icons.chevron_right_rounded)),
                 Expanded(child: Center(child: Text(month, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800, color: AppColors.yellow)))),
@@ -90,7 +89,6 @@ class _ReportsScreenState extends State<ReportsScreen> {
       padding: EdgeInsets.zero,
       radius: 20,
       blur: 12,
-      tint: const Color(0x1FFFFFFF),
       borderColor: AppColors.border,
       child: ListTile(
         leading: Container(

@@ -156,13 +156,13 @@ class _FinanceScreenState extends State<FinanceScreen> {
     min.dispose();
   }
 
-  Widget sum(String t, dynamic d, dynamic p, dynamic r) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(title: Text(t), subtitle: Text('إجمالي: ${d ?? 0} • مدفوع: ${p ?? 0} • متبقي: ${r ?? 0}')));
+  Widget sum(String t, dynamic d, dynamic p, dynamic r) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(title: Text(t), subtitle: Text('إجمالي: ${d ?? 0} • مدفوع: ${p ?? 0} • متبقي: ${r ?? 0}')));
 
   Widget due(String label, dynamic d, String type) {
     final person = type == 'teacher' ? d['teacher'] : d['supervisor'];
     final name = person is Map ? '${person['name'] ?? label}' : label;
     final rem = (double.tryParse('${d['amount'] ?? 0}') ?? 0) - (double.tryParse('${d['paid_amount'] ?? 0}') ?? 0);
-    return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(title: Text(name), subtitle: Text('${d['amount'] ?? 0} • مدفوع ${d['paid_amount'] ?? 0} • متبقي $rem'), trailing: rem > 0 ? TextButton(onPressed: () => pay(type, d), child: const Text('صرف')) : const Text('مدفوع')));
+    return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(title: Text(name), subtitle: Text('${d['amount'] ?? 0} • مدفوع ${d['paid_amount'] ?? 0} • متبقي $rem'), trailing: rem > 0 ? TextButton(onPressed: () => pay(type, d), child: const Text('صرف')) : const Text('مدفوع')));
   }
 
   @override
@@ -178,11 +178,11 @@ class _FinanceScreenState extends State<FinanceScreen> {
       ...supervisorDues.map((d) => due('مشرف', d, 'supervisor')),
       const SizedBox(height: 12),
       const Text('طلبات السحب', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      ...withdrawals.map((w) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(title: Text('${w['recipient_type'] ?? ''} #${w['recipient_id'] ?? ''}'), subtitle: Text('${w['amount'] ?? 0} • ${w['status'] ?? ''}'), trailing: w['status'] == 'paid' || w['status'] == 'rejected' ? null : PopupMenuButton<String>(onSelected: (s) => status(id(w), s), itemBuilder: (_) => const [PopupMenuItem(value: 'approved', child: Text('اعتماد')), PopupMenuItem(value: 'rejected', child: Text('رفض')), PopupMenuItem(value: 'paid', child: Text('تم الدفع'))])))),
+      ...withdrawals.map((w) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(title: Text('${w['recipient_type'] ?? ''} #${w['recipient_id'] ?? ''}'), subtitle: Text('${w['amount'] ?? 0} • ${w['status'] ?? ''}'), trailing: w['status'] == 'paid' || w['status'] == 'rejected' ? null : PopupMenuButton<String>(onSelected: (s) => status(id(w), s), itemBuilder: (_) => const [PopupMenuItem(value: 'approved', child: Text('اعتماد')), PopupMenuItem(value: 'rejected', child: Text('رفض')), PopupMenuItem(value: 'paid', child: Text('تم الدفع'))])))),
       const SizedBox(height: 12),
       const Text('المكافآت', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
       ...bonuses.map((b) => ListTile(title: Text('${b['name'] ?? 'مكافأة'}'), subtitle: Text('${b['recipient_type'] ?? ''} • ${b['bonus_date'] ?? ''}'), trailing: Text('${b['amount'] ?? 0}'))),
-      ...settings.map((s) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),child: ListTile(title: Text(s['recipient_type'] == 'teacher' ? 'إعداد سحب المدرسين' : 'إعداد سحب المشرفين'), subtitle: Text('الحد الأدنى: ${s['minimum_amount'] ?? 0} • ${s['enabled'] == true ? 'مفتوح' : 'مغلق'}'), trailing: IconButton(onPressed: () => setting(s), icon: const Icon(Icons.settings))))),
+      ...settings.map((s) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,child: ListTile(title: Text(s['recipient_type'] == 'teacher' ? 'إعداد سحب المدرسين' : 'إعداد سحب المشرفين'), subtitle: Text('الحد الأدنى: ${s['minimum_amount'] ?? 0} • ${s['enabled'] == true ? 'مفتوح' : 'مغلق'}'), trailing: IconButton(onPressed: () => setting(s), icon: const Icon(Icons.settings))))),
     ];
     return Scaffold(
       appBar: AppBar(title: const Text('المالية والمستحقات'), actions: [IconButton(onPressed: load, icon: const Icon(Icons.refresh))]),

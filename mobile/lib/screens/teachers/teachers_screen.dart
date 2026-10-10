@@ -331,7 +331,6 @@ class _TeachersScreenState extends State<TeachersScreen> {
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                           radius: 20,
                           blur: 12,
-                          tint: const Color(0x22FFFFFF),
                           borderColor: AppColors.border,
                           child: Row(children: [
                             Container(
@@ -353,7 +352,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                           ]),
                         ),
                         if (teachers.isEmpty) const Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مدرسون بعد.'))),
-                        ...teachers.map((teacher) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
+                        ...teachers.map((teacher) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                           child: ListTile(
                             onTap: () => details(id(teacher)),
                             leading: const CircleAvatar(child: Icon(Icons.school)),

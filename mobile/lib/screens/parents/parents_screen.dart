@@ -135,7 +135,6 @@ class _ParentsScreenState extends State<ParentsScreen> {
                       padding: const EdgeInsets.all(14),
                       radius: 20,
                       blur: 12,
-                      tint: const Color(0x1FFFFFFF),
                       borderColor: AppColors.border,
 
                       child: Column(
@@ -242,7 +241,7 @@ class _ParentsScreenState extends State<ParentsScreen> {
                           itemCount: parents.length,
                           itemBuilder: (context, index) {
                             final parent = parents[index];
-                            return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
+                            return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                               child: ListTile(
                                 onTap: () => details(parent),
                                 leading: const CircleAvatar(

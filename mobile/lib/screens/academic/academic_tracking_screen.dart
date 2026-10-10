@@ -420,7 +420,7 @@ class _AcademicTrackingScreenState extends State<AcademicTrackingScreen> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 ...plans.map(
-                  (plan) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
+                  (plan) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                     child: ListTile(
                       onTap: () => editPlan(plan),
                       title: Text('${plan['subject'] ?? ''}'),
