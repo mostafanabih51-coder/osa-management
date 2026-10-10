@@ -245,6 +245,8 @@ class _ParentsScreenState extends State<ParentsScreen> {
                               child: ListTile(
                                 onTap: () => details(parent),
                                 leading: const CircleAvatar(
+                                  backgroundColor: AppColors.blueGray,
+                                  foregroundColor: AppColors.yellow,
                                   child: Icon(Icons.family_restroom),
                                 ),
                                 title: Text(parent.name),
