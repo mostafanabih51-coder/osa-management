@@ -258,7 +258,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
               child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
                 Text('التخصص: ${teacher['specialization'] ?? '-'}'),
                 Text('المستحق: ${data['due'] ?? 0} • المدفوع: ${data['paid'] ?? 0} • المتبقي: ${data['remaining'] ?? 0}'),
-                FilledButton.icon(onPressed: () { Navigator.pop(d); assign(teacher); }, icon: const Icon(Icons.link), label: const Text('ربط طالب / مادة / سعر')),
+                FilledButton.icon(onPressed: () { Navigator.pop(d); assign(teacher); }, icon: const Icon(Icons.link, color: AppColors.yellow), label: const Text('ربط طالب / مادة / سعر')),
                 const Divider(),
                 Text('الطلاب المرتبطون (${linked.length})', style: const TextStyle(fontWeight: FontWeight.bold)),
                 if (linked.isEmpty) const Text('لا يوجد طلاب مرتبطون بهذا المدرس.'),
