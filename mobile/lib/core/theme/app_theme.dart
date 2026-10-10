@@ -71,7 +71,6 @@ class AppTheme {
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: AppColors.text.withValues(alpha: 0.18), width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -311,7 +310,7 @@ class GlassSurface extends StatelessWidget {
       decoration: BoxDecoration(
         color: tint,
         borderRadius: shape,
-        border: Border.all(color: borderColor, width: 1),
+        // Solid brand fill: no glass edge, gloss, blur, or transparency.
       ),
       child: child,
     );
