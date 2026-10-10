@@ -9,7 +9,7 @@ class AppColors {
   static const navy = blueGray;
   static const magenta = Color(0xFFB43A6C);
   static const yellow = Color(0xFFFFC822);
-  static const background = blueGray;
+  static const background = magenta;
   static const surface = blueGray;
   static const surfaceDeep = blueGray;
   static const text = Color(0xFFF1F3F8);
@@ -52,7 +52,7 @@ class AppTheme {
             displayColor: AppColors.text,
           ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.blueGray,
+        backgroundColor: AppColors.background,
         foregroundColor: AppColors.text,
         centerTitle: false,
         elevation: 0,
@@ -318,7 +318,7 @@ class GlassSurface extends StatelessWidget {
                 Color(0x10FFFFFF),
                 Color(0x06384660),
                 Color(0x0DB43A6C),
-                Color(0x06263248),
+                Color(0x06384660),
               ],
               stops: [0.0, 0.18, 0.48, 0.76, 1.0],
             ),

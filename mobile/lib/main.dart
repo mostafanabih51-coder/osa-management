@@ -54,10 +54,10 @@ class OSAApp extends StatelessWidget {
                   begin: Alignment.topRight,
                   end: Alignment.bottomLeft,
                   colors: [
-                    Color(0xFF384660),
-                    Color(0xFF384660),
-                    Color(0xFF384660),
-                    Color(0xFF384660),
+                    AppColors.background,
+                    AppColors.background,
+                    AppColors.background,
+                    AppColors.background,
                   ],
                 ),
               ),
@@ -73,7 +73,7 @@ class OSAApp extends StatelessWidget {
                     height: 280,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFFB43A6C).withValues(alpha: 0.22),
+                      color: AppColors.magenta.withValues(alpha: 0.14),
                     ),
                   ),
                 ),
@@ -90,7 +90,7 @@ class OSAApp extends StatelessWidget {
                     height: 320,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      color: const Color(0xFFFFC822).withValues(alpha: 0.09),
+                      color: AppColors.yellow.withValues(alpha: 0.09),
                     ),
                   ),
                 ),
