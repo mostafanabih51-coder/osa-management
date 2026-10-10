@@ -329,7 +329,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                       children: [
                         Card(child: Padding(padding: const EdgeInsets.all(14), child: Text('المدرسون: ${teachers.length} • الطلاب المتاحون للربط: ${students.length}'))),
                         if (teachers.isEmpty) const Padding(padding: EdgeInsets.all(30), child: Center(child: Text('لا يوجد مدرسون بعد.'))),
-                        ...teachers.map((teacher) => Card(
+                        ...teachers.map((teacher) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12, tint: const Color(0x18FFFFFF),
                           child: ListTile(
                             onTap: () => details(id(teacher)),
                             leading: const CircleAvatar(child: Icon(Icons.school)),
