@@ -355,7 +355,7 @@ class _TeachersScreenState extends State<TeachersScreen> {
                         ...teachers.map((teacher) => GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                           child: ListTile(
                             onTap: () => details(id(teacher)),
-                            leading: const CircleAvatar(child: Icon(Icons.school)),
+                            leading: const CircleAvatar(backgroundColor: AppColors.blueGray, foregroundColor: AppColors.yellow, child: Icon(Icons.school)),
                             title: Text('${teacher['name'] ?? ''}', style: const TextStyle(fontWeight: FontWeight.bold)),
                             subtitle: Text('المادة: ${teacher['specialization'] ?? '-'}\n${teacher['phone'] ?? teacher['email'] ?? ''}'),
                             isThreeLine: true,
