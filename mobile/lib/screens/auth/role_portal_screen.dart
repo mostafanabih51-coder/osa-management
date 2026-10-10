@@ -55,7 +55,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: accent, size: 22),
+            Icon(icon, color: AppColors.yellow, size: 22),
             const SizedBox(height: 11),
             Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
