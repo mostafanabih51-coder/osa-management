@@ -90,7 +90,7 @@ class _SubscriptionRemindersScreenState extends State<SubscriptionRemindersScree
                           final read = r['read_at'] != null;
                           return GlassSurface(padding: EdgeInsets.zero, radius: 20, blur: 12,
                             child: ListTile(
-                              leading: Icon(read ? Icons.notifications_none : Icons.notifications_active, color: read ? null : Theme.of(context).colorScheme.primary),
+                              leading: Icon(read ? Icons.notifications_none : Icons.notifications_active, color: AppColors.yellow),
                               title: Text('${r['title'] ?? typeLabel(r['reminder_type'])}'),
                               subtitle: Text('${r['message'] ?? ''}\nالتاريخ: ${r['due_on'] ?? ''}'),
                               isThreeLine: true,
