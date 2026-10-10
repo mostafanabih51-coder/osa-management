@@ -294,7 +294,7 @@ class GlassSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
     this.blur = 16,
-    this.tint = const Color(0xD9384660),
+    this.tint = const Color(0xD9B43A6C),
     this.borderColor = const Color(0x35F1F3F8),
   });
 

@@ -100,7 +100,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         radius: 22,
         blur: 18,
-        tint: color.withValues(alpha: 0.30),
+        tint: color.withValues(alpha: 0.84),
         borderColor: AppColors.text.withValues(alpha: 0.22),
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 118),
@@ -246,7 +246,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(20),
               radius: 24,
               blur: 22,
-              tint: AppColors.magenta.withValues(alpha: 0.24),
+              tint: AppColors.magenta.withValues(alpha: 0.84),
               borderColor: AppColors.text.withValues(alpha: 0.28),
               child: Stack(
                 children: [
@@ -431,7 +431,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(8),
               radius: 20,
               blur: 18,
-              tint: AppColors.surfaceDeep.withValues(alpha: 0.30),
+              tint: AppColors.magenta.withValues(alpha: 0.82),
               borderColor: AppColors.text.withValues(alpha: 0.18),
               child: Wrap(
                 spacing: 8,
@@ -568,7 +568,7 @@ class _QuickAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         radius: 14,
         blur: 12,
-        tint: AppColors.surface.withValues(alpha: 0.32),
+        tint: AppColors.magenta.withValues(alpha: 0.84),
         borderColor: AppColors.text.withValues(alpha: 0.18),
         child: Row(
           mainAxisSize: MainAxisSize.min,

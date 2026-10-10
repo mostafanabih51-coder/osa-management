@@ -48,7 +48,7 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
         decoration: BoxDecoration(
-          color: AppColors.surfaceDeep,
+          color: AppColors.magenta,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.border),
         ),

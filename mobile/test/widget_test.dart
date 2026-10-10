@@ -13,6 +13,8 @@ void main() {
     expect(AppColors.background, const Color(0xFF384660));
     expect(AppColors.surface, const Color(0xFFB43A6C));
     expect(AppColors.surfaceDeep, const Color(0xFF384660));
+    expect(AppTheme.light().cardTheme.color, AppColors.magenta);
+    expect(const GlassSurface(child: SizedBox()).tint, const Color(0xD9B43A6C));
   });
 
   testWidgets('app opens on login when there is no session', (tester) async {
