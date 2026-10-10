@@ -129,9 +129,15 @@ class _ParentsScreenState extends State<ParentsScreen> {
                   final resources = list(map['resources']);
                   final evaluations = list(map['evaluations']);
 
-                  return Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(10),
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: GlassSurface(
+                      padding: const EdgeInsets.all(14),
+                      radius: 20,
+                      blur: 12,
+                      tint: const Color(0x1FFFFFFF),
+                      borderColor: AppColors.border,
+
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
