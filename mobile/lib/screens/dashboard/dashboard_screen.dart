@@ -320,13 +320,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 18),
                       OutlinedButton.icon(
                         style: OutlinedButton.styleFrom(
+                          backgroundColor: AppColors.magenta,
                           foregroundColor: Colors.white,
-                          side: BorderSide(
-                              color: Colors.white.withValues(alpha: 0.45)),
+                          side: const BorderSide(color: AppColors.magenta),
                           minimumSize: const Size(0, 44),
                         ),
                         onPressed: () => open(const AcademicTrackingScreen()),
-                        icon: const Icon(Icons.analytics_outlined, size: 19),
+                        icon: const Icon(Icons.analytics_outlined, size: 19, color: AppColors.yellow),
                         label: const Text('المتابعة والحصص الشهرية'),
                       ),
                     ],
