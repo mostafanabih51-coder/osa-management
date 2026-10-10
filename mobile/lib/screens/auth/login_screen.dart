@@ -147,20 +147,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ),
                       const SizedBox(height: 28),
-                      Container(
+                      GlassSurface(
                         padding: const EdgeInsets.all(23),
-                        decoration: BoxDecoration(
-                          color: AppColors.magenta,
-                          borderRadius: BorderRadius.circular(26),
-                          border: Border.all(color: AppColors.border),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 28,
-                              offset: const Offset(0, 14),
-                            ),
-                          ],
-                        ),
+                        radius: 26,
                         child: Form(
                           key: formKey,
                           child: Column(
