@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                           children: [
                                             Icon(Icons.login_rounded, size: 20),
                                             SizedBox(width: 9),
-                                            Text('تسجيل الدخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
+                                            Text('دخول', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                                           ],
                                         ),
                                 ),
