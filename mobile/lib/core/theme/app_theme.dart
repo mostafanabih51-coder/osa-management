@@ -8,8 +8,9 @@ class AppColors {
   static const magenta = Color(0xFFB43A6C);
   static const yellow = Color(0xFFFFC822);
   static const background = blueGray;
-  static const surface = magenta;
-  static const surfaceDeep = blueGray;
+  static const surface = Color(0xFF2D3850);
+  static const surfaceDeep = Color(0xFF222C43);
+  static const surfaceRaised = Color(0xFF35415A);
   static const text = Color(0xFFF1F3F8);
   static const muted = Color(0xFFD6DCE7);
   static const border = Color(0x667D8AA0);
@@ -64,13 +65,14 @@ class AppTheme {
         ),
       ),
       cardTheme: CardThemeData(
-        color: AppColors.magenta,
+        color: AppColors.surface,
         elevation: 0,
         shadowColor: Colors.transparent,
         surfaceTintColor: Colors.transparent,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.border, width: 1),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -282,12 +284,12 @@ class AppTheme {
   }
 }
 
-/// Solid, fully opaque OSA brand surface. Keep cards free of glass blur and gloss.
+/// Subtle glass-like OSA surface with restrained transparency and a fine edge.
 class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
-  // Retained for source compatibility; solid cards intentionally do not blur.
+  // Retained for source compatibility; blur remains intentionally restrained.
   final double blur;
   final Color tint;
   final Color borderColor;
@@ -298,8 +300,8 @@ class GlassSurface extends StatelessWidget {
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
     this.blur = 0,
-    this.tint = AppColors.magenta,
-    this.borderColor = AppColors.magenta,
+    this.tint = AppColors.surface,
+    this.borderColor = AppColors.border,
   });
 
   @override
@@ -308,9 +310,26 @@ class GlassSurface extends StatelessWidget {
     return Container(
       padding: padding,
       decoration: BoxDecoration(
-        color: tint,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            tint.withValues(alpha: 0.96),
+            tint.withValues(alpha: 0.90),
+          ],
+        ),
         borderRadius: shape,
-        // Solid brand fill: no glass edge, gloss, blur, or transparency.
+        border: Border.all(
+          color: borderColor.withValues(alpha: 0.55),
+          width: 1,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.10),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
+          ),
+        ],
       ),
       child: child,
     );
