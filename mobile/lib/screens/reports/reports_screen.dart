@@ -95,9 +95,9 @@ class _ReportsScreenState extends State<ReportsScreen> {
           width: 44,
           height: 44,
           decoration: BoxDecoration(
-            color: AppColors.magenta.withValues(alpha: 0.22),
+            color: AppColors.surfaceDeep,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
+            border: Border.all(color: AppColors.magenta.withValues(alpha: 0.45)),
           ),
           child: const Icon(Icons.bar_chart_rounded, color: AppColors.yellow),
         ),
