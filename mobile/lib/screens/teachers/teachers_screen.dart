@@ -337,9 +337,9 @@ class _TeachersScreenState extends State<TeachersScreen> {
                               width: 46,
                               height: 46,
                               decoration: BoxDecoration(
-                                color: AppColors.magenta.withValues(alpha: 0.22),
+                                color: AppColors.surfaceDeep,
                                 borderRadius: BorderRadius.circular(15),
-                                border: Border.all(color: AppColors.magenta.withValues(alpha: 0.55)),
+                                border: Border.all(color: AppColors.magenta.withValues(alpha: 0.45)),
                               ),
                               child: const Icon(Icons.groups_rounded, color: AppColors.yellow),
                             ),

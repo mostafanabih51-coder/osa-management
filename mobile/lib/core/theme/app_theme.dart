@@ -289,6 +289,7 @@ class GlassSurface extends StatelessWidget {
   final Widget child;
   final EdgeInsetsGeometry padding;
   final double radius;
+  final EdgeInsetsGeometry margin;
   // Retained for source compatibility; blur remains intentionally restrained.
   final double blur;
   final Color tint;
@@ -299,6 +300,7 @@ class GlassSurface extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(20),
     this.radius = 24,
+    this.margin = const EdgeInsets.only(bottom: 12),
     this.blur = 0,
     this.tint = AppColors.surface,
     this.borderColor = AppColors.border,
@@ -308,6 +310,7 @@ class GlassSurface extends StatelessWidget {
   Widget build(BuildContext context) {
     final shape = BorderRadius.circular(radius);
     return Container(
+      margin: margin,
       padding: padding,
       decoration: BoxDecoration(
         gradient: LinearGradient(

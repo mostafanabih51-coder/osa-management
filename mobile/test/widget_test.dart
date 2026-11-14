@@ -25,6 +25,7 @@ void main() {
     expect(AppTheme.light().outlinedButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
     expect(const GlassSurface(child: SizedBox()).tint, AppColors.surface);
     expect(const GlassSurface(child: SizedBox()).borderColor, AppColors.border);
+    expect(const GlassSurface(child: SizedBox()).margin, const EdgeInsets.only(bottom: 12));
   });
 
   testWidgets('app opens on login when there is no session', (tester) async {
