@@ -11,9 +11,10 @@ void main() {
     expect(AppColors.magenta, const Color(0xFFB43A6C));
     expect(AppColors.yellow, const Color(0xFFFFC822));
     expect(AppColors.background, const Color(0xFF384660));
-    expect(AppColors.surface, const Color(0xFFB43A6C));
-    expect(AppColors.surfaceDeep, const Color(0xFF384660));
-    expect(AppTheme.light().cardTheme.color, AppColors.magenta);
+    expect(AppColors.surface, const Color(0xFF2D3850));
+    expect(AppColors.surfaceDeep, const Color(0xFF222C43));
+    expect(AppColors.surfaceRaised, const Color(0xFF35415A));
+    expect(AppTheme.light().cardTheme.color, AppColors.surface);
     expect(AppTheme.light().cardTheme.surfaceTintColor, Colors.transparent);
     expect(AppTheme.light().iconTheme.color, AppColors.yellow);
     expect(AppTheme.light().floatingActionButtonTheme.backgroundColor, AppColors.magenta);
@@ -22,7 +23,9 @@ void main() {
     expect(AppTheme.light().elevatedButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
     expect(AppTheme.light().textButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
     expect(AppTheme.light().outlinedButtonTheme.style?.iconColor?.resolve({}), AppColors.yellow);
-    expect(const GlassSurface(child: SizedBox()).tint, AppColors.magenta);
+    expect(const GlassSurface(child: SizedBox()).tint, AppColors.surface);
+    expect(const GlassSurface(child: SizedBox()).borderColor, AppColors.border);
+    expect(const GlassSurface(child: SizedBox()).margin, const EdgeInsets.only(bottom: 12));
   });
 
   testWidgets('app opens on login when there is no session', (tester) async {

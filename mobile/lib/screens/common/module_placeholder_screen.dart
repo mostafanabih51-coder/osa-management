@@ -30,10 +30,10 @@ class ModulePlaceholderScreen extends StatelessWidget {
                     gradient: const LinearGradient(
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
-                      colors: [AppColors.magenta, AppColors.surfaceDeep],
+                      colors: [AppColors.surfaceRaised, AppColors.surfaceDeep],
                     ),
-                    border: Border.all(color: AppColors.yellow.withValues(alpha: 0.7)),
-                    boxShadow: [BoxShadow(color: AppColors.magenta.withValues(alpha: 0.22), blurRadius: 24, offset: const Offset(0, 8))],
+                    border: Border.all(color: AppColors.border),
+                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.16), blurRadius: 24, offset: const Offset(0, 8))],
                   ),
                   child: Icon(icon, size: 42, color: AppColors.yellow),
                 ),

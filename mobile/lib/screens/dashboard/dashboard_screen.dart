@@ -100,8 +100,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         padding: const EdgeInsets.all(16),
         radius: 22,
         blur: 18,
-        tint: AppColors.magenta,
-        borderColor: AppColors.text.withValues(alpha: 0.22),
+        tint: color,
+        borderColor: AppColors.border,
         child: ConstrainedBox(
           constraints: const BoxConstraints(minHeight: 118),
           child: Column(
@@ -110,7 +110,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             Row(
               children: [
-                Icon(icon, color: AppColors.yellow, size: 30),
+                Icon(icon, color: AppColors.magenta, size: 30),
                 const Spacer(),
                 Icon(Icons.arrow_outward_rounded,
                     color: AppColors.yellow, size: 19),
@@ -246,8 +246,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(20),
               radius: 24,
               blur: 22,
-              tint: AppColors.magenta,
-              borderColor: AppColors.magenta,
+              tint: AppColors.surfaceRaised,
+              borderColor: AppColors.border,
               child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -345,7 +345,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   subtitle: 'ملفات الطلاب واشتراكاتهم',
                   icon: Icons.people_alt_rounded,
                   page: const StudentsScreen(),
-                  color: AppColors.magenta,
+                  color: AppColors.surfaceRaised,
                   showValue: false,
                 ),
                 dashboardCard(
@@ -369,7 +369,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   subtitle: 'متابعة الحضور والغياب',
                   icon: Icons.fact_check_rounded,
                   page: const AttendanceScreen(),
-                  color: AppColors.magenta,
+                  color: AppColors.surfaceRaised,
                   value: data?['today_attendance'] ?? 0,
                 ),
                 dashboardCard(
@@ -377,7 +377,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   subtitle: 'المدفوعات والإيرادات',
                   icon: Icons.payments_rounded,
                   page: const PaymentsScreen(),
-                  color: AppColors.magenta,
+                  color: AppColors.surfaceRaised,
                   value: data?['monthly_income'] ?? 0,
                 ),
                 dashboardCard(
@@ -408,8 +408,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
               padding: const EdgeInsets.all(8),
               radius: 20,
               blur: 18,
-              tint: AppColors.magenta,
-              borderColor: AppColors.text.withValues(alpha: 0.18),
+              tint: AppColors.surfaceDeep,
+              borderColor: AppColors.border,
               child: Wrap(
                 spacing: 8,
                 runSpacing: 8,
@@ -545,8 +545,8 @@ class _QuickAction extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
         radius: 14,
         blur: 12,
-        tint: AppColors.magenta,
-        borderColor: AppColors.text.withValues(alpha: 0.18),
+        tint: AppColors.surfaceDeep,
+        borderColor: AppColors.border,
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [

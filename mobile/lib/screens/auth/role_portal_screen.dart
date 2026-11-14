@@ -48,14 +48,14 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
         decoration: BoxDecoration(
-          color: AppColors.magenta,
+          color: AppColors.surfaceRaised,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.border),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(icon, color: AppColors.yellow, size: 22),
+            Icon(icon, color: accent, size: 22),
             const SizedBox(height: 11),
             Text(value, maxLines: 1, overflow: TextOverflow.ellipsis,
                 style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.text)),
@@ -124,11 +124,16 @@ class _RolePortalScreenState extends State<RolePortalScreen> {
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppColors.magenta,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [AppColors.surfaceRaised, AppColors.surfaceDeep],
+                      ),
                       borderRadius: BorderRadius.circular(24),
+                      border: Border.all(color: AppColors.border, width: 1),
                       boxShadow: [
                         BoxShadow(
-                          color: AppColors.magenta.withValues(alpha: 0.20),
+                          color: Colors.black.withValues(alpha: 0.16),
                           blurRadius: 18,
                           offset: const Offset(0, 8),
                         ),
